@@ -26,7 +26,7 @@
         <h1 class="text-xl font-bold">こだわりガイドブック</h1>
         <div id="mode-switcher" class="flex justify-center mt-3 hidden">
             <div class="inline-flex bg-emerald-700/50 rounded-lg p-1 gap-1">
-                <button onclick="setViewMode('my')" id="mode-my" class="px-4 py-1 rounded-md text-[10px] font-bold bg-white text-emerald-700">家族用</button>
+                <button onclick="setViewMode('my')" id="mode-my" class="px-4 py-1 rounded-md text-[10px] font-bold bg-white text-emerald-700 shadow-sm">家族用</button>
                 <button onclick="setViewMode('share')" id="mode-share" class="px-4 py-1 rounded-md text-[10px] font-bold text-white/70">職場共有</button>
             </div>
         </div>
@@ -36,17 +36,17 @@
         <div id="section-home" class="grid grid-cols-1 gap-6 pt-10 text-center">
             <button onclick="startCameraMode()" class="menu-btn bg-blue-600 text-white shadow-blue-200">
                 <span class="text-4xl mb-2">📸</span>
-                <span class="font-bold text-lg text-white">カメラでスマート入力</span>
+                <span class="font-bold text-lg">カメラでスマート入力</span>
                 <span class="text-[10px] opacity-80 text-white/80">バーコード・AI解析</span>
             </button>
             <button onclick="startManualMode()" class="menu-btn bg-white text-emerald-700 border-2 border-emerald-100">
                 <span class="text-4xl mb-2">📝</span>
-                <span class="font-bold text-lg text-emerald-700">じっくり詳細入力</span>
+                <span class="font-bold text-lg">じっくり詳細入力</span>
                 <span class="text-[10px] text-gray-400">底値比較・原料登録</span>
             </button>
             <button onclick="startBrowseMode()" class="menu-btn bg-emerald-500 text-white shadow-emerald-200">
                 <span class="text-4xl mb-2">👀</span>
-                <span class="font-bold text-lg text-white">みんなの記録を見る</span>
+                <span class="font-bold text-lg">みんなの記録を見る</span>
                 <span class="text-[10px] opacity-80 text-white/80">保存データの閲覧・編集</span>
             </button>
         </div>
@@ -56,7 +56,7 @@
         <div id="section-form" class="hidden bg-white p-6 rounded-3xl shadow-sm border border-gray-200">
             <div class="flex justify-between items-center mb-6">
                 <h2 id="form-title" class="text-lg font-bold text-emerald-700">📝 データ入力</h2>
-                <button onclick="goBackFromForm()" class="text-gray-400 font-bold">× 戻る</button>
+                <button onclick="goBackFromForm()" class="text-gray-400 font-bold font-bold">× 戻る</button>
             </div>
             <div class="space-y-4 text-left">
                 <div class="grid grid-cols-2 gap-2">
@@ -84,37 +84,25 @@
                     <label class="text-[10px] font-bold text-yellow-600 ml-1">満足度(1-5)</label>
                     <input type="range" id="gourmet-rating" min="1" max="5" value="3" class="w-full accent-yellow-500">
                 </div>
-                <div id="fields-hotel" class="hidden space-y-3 bg-gray-50 p-3 rounded-xl border border-gray-100">
-                    <input type="text" id="hotel-pref" placeholder="都道府県" class="w-full p-2 border rounded text-sm bg-white">
-                    <div class="grid grid-cols-2 gap-2 text-[10px] font-bold text-gray-500"><div>内装<input type="number" id="hotel-interior" min="1" max="5" value="3" class="w-full p-1 border rounded"></div><div>食事<input type="number" id="hotel-meal" min="1" max="5" value="3" class="w-full p-1 border rounded"></div></div>
-                </div>
-                <div id="fields-sushi" class="hidden space-y-2 bg-gray-50 p-3 rounded-xl border border-gray-100">
-                    <input type="text" id="sushi-parent" placeholder="魚種" class="w-full p-2 border rounded text-sm bg-white"><input type="text" id="sushi-sub" placeholder="品種" class="w-full p-2 border rounded text-sm bg-white">
-                </div>
                 <div id="field-url"><input type="url" id="itemUrl" placeholder="🔗 通販URL" class="w-full p-3 border border-blue-100 rounded-xl text-sm bg-blue-50/20"></div>
                 
-                <textarea id="hours" placeholder="営業時間・詳細情報" class="w-full p-3 border rounded-xl h-20 text-sm"></textarea>
+                <textarea id="hours" placeholder="詳細情報" class="w-full p-3 border rounded-xl h-20 text-sm"></textarea>
                 
                 <div class="p-4 border-2 border-dashed border-emerald-100 rounded-xl bg-emerald-50/20"><input type="file" id="photo" accept="image/*" multiple class="text-xs w-full" onchange="processOCR(this)"><div id="ocr-status" class="text-[9px] text-blue-600 font-bold mt-2"></div></div>
                 <textarea id="memo" placeholder="こだわりメモ" class="w-full p-3 border rounded-xl h-24 text-sm"></textarea>
-                <label class="flex items-center gap-3 p-3 bg-blue-50 rounded-xl cursor-pointer border border-blue-100"><input type="checkbox" id="isPublic" class="w-5 h-5 accent-blue-600"><span class="text-sm font-bold text-blue-700 font-bold">職場の仲間に公開する</span></label>
+                <label class="flex items-center gap-3 p-3 bg-blue-50 rounded-xl cursor-pointer border border-blue-100 font-bold"><input type="checkbox" id="isPublic" class="w-5 h-5 accent-blue-600"><span class="text-sm font-bold text-blue-700">職場の仲間に公開する</span></label>
                 <button onclick="saveData()" id="save-btn" class="w-full bg-emerald-500 text-white py-4 rounded-2xl font-bold shadow-lg active:scale-95 transition-all">保存して同期</button>
             </div>
         </div>
 
         <div id="section-browse" class="hidden">
-            <div class="flex justify-between items-center mb-4"><button onclick="goHome()" class="text-emerald-700 font-bold text-sm">← 戻る</button><div class="flex gap-2 w-2/3"><input type="text" id="searchInput" oninput="displayData()" placeholder="🔍 名前やメモで検索..." class="p-2 border rounded-full text-xs w-full outline-none bg-white shadow-sm"><button onclick="showQR()" id="btn-show-qr" class="bg-white border border-emerald-200 p-2 rounded-full shadow-sm text-lg font-bold">📲</button></div></div>
+            <div class="flex justify-between items-center mb-4"><button onclick="goHome()" class="text-emerald-700 font-bold text-sm">← 戻る</button><div class="flex gap-2 w-2/3"><input type="text" id="searchInput" oninput="displayData()" placeholder="🔍 検索..." class="p-2 border rounded-full text-xs w-full outline-none bg-white shadow-sm"><button onclick="showQR()" id="btn-show-qr" class="bg-white border border-emerald-200 p-2 rounded-full shadow-sm text-lg">📲</button></div></div>
             <nav class="flex overflow-x-auto gap-2 mb-6 no-scrollbar border-b pb-2 font-bold"><button onclick="switchTab('gourmet')" id="tab-gourmet" class="px-3 py-1 whitespace-nowrap active-tab text-sm">グルメ</button><button onclick="switchTab('item')" id="tab-item" class="px-3 py-1 whitespace-nowrap text-sm text-gray-400">調味料・日用品</button><button onclick="switchTab('hotel')" id="tab-hotel" class="px-3 py-1 whitespace-nowrap text-sm text-gray-400">ホテル</button><button onclick="switchTab('sushi')" id="tab-sushi" class="px-3 py-1 whitespace-nowrap text-sm text-gray-400">寿司</button></nav>
-            <div id="list-container" class="space-y-6 pb-20"></div>
+            <div id="list-container" class="space-y-6 pb-20 font-bold"></div>
         </div>
 
         <div id="qr-modal" onclick="closeQR()" class="fixed inset-0 bg-black/80 z-[100] hidden items-center justify-center p-6">
-            <div onclick="event.stopPropagation()" class="bg-white p-8 rounded-3xl text-center w-full max-w-xs relative">
-                <button onclick="closeQR()" class="absolute top-4 right-4 text-gray-300 text-xl font-bold font-bold">×</button>
-                <h3 class="font-bold text-emerald-700 mb-4 font-bold">職場共有用QR</h3>
-                <div id="qr-code-area" class="bg-gray-100 aspect-square w-full mb-4 flex items-center justify-center rounded-xl overflow-hidden shadow-inner"></div>
-                <button onclick="closeQR()" class="w-full py-3 bg-emerald-500 text-white rounded-xl font-bold shadow-md">閉じて戻る</button>
-            </div>
+            <div onclick="event.stopPropagation()" class="bg-white p-8 rounded-3xl text-center w-full max-w-xs relative"><button onclick="closeQR()" class="absolute top-4 right-4 text-gray-300 text-xl font-bold font-bold">×</button><h3 class="font-bold text-emerald-700 mb-4">職場共有用QR</h3><div id="qr-code-area" class="bg-gray-100 aspect-square w-full mb-4 flex items-center justify-center rounded-xl overflow-hidden shadow-inner"></div><button onclick="closeQR()" class="w-full py-3 bg-emerald-500 text-white rounded-xl font-bold shadow-md">閉じて戻る</button></div>
         </div>
     </main>
 
@@ -131,28 +119,18 @@
 
         function toggleCategoryFields(cat) {
             document.getElementById('fields-gourmet-rating').classList.toggle('hidden', cat !== 'gourmet');
-            document.getElementById('fields-hotel').classList.toggle('hidden', cat !== 'hotel');
-            document.getElementById('fields-sushi').classList.toggle('hidden', cat !== 'sushi');
             document.getElementById('fields-comparison').classList.toggle('hidden', cat !== 'item');
             document.getElementById('field-location').classList.toggle('hidden', cat === 'item');
-            document.getElementById('field-url').classList.toggle('hidden', cat === 'item' || cat === 'hotel' || cat === 'sushi');
-            
-            // 調味料タブのときは「原料」に名前を変える
-            const hoursField = document.getElementById('hours');
-            if (cat === 'item') {
-                hoursField.placeholder = "【重要】原材料・添加物を入力";
-            } else {
-                hoursField.placeholder = "営業時間・詳細情報";
-            }
-
+            document.getElementById('field-url').classList.toggle('hidden', cat !== 'gourmet' && cat !== 'hotel');
+            const h = document.getElementById('hours');
+            h.placeholder = (cat === 'item') ? "【最重要】原材料・添加物を入力" : "営業時間・詳細情報";
             if(cat === 'item' && document.getElementById('price-entry-list').children.length === 0) addPriceField();
         }
 
-        // 近くの店舗を検索する機能
-        function searchNearby(shopNameId) {
-            const shopName = document.getElementById(shopNameId).value;
-            if(!shopName) return alert("お店名を入力してください");
-            window.open(`https://www.google.com/search?q=${encodeURIComponent(shopName + ' 近くの店舗')}`, '_blank');
+        function searchNearby(id) {
+            const v = document.getElementById(id).value;
+            if(!v) return alert("お店名を入力してください");
+            window.open(`https://www.google.com/search?q=${encodeURIComponent(v + ' 近くの店舗')}`, '_blank');
         }
 
         function addPriceField(data = {}) {
@@ -160,17 +138,7 @@
             const id = Date.now();
             const div = document.createElement('div');
             div.className = 'p-3 bg-orange-50/50 rounded-xl border border-orange-100 space-y-2 relative';
-            div.innerHTML = `
-                <button onclick="this.parentElement.remove()" class="absolute top-1 right-2 text-orange-300 text-xs font-bold">×</button>
-                <div class="flex gap-2">
-                    <input type="text" id="shop-${id}" placeholder="お店名（例:ツルヤ）" class="shop-name w-full p-2 text-xs border rounded-lg bg-white font-bold shadow-sm" value="${data.shop || ''}">
-                    <button onclick="searchNearby('shop-${id}')" class="bg-blue-500 text-white px-2 rounded-lg text-[8px] font-bold whitespace-nowrap shadow-sm">📍近くを検索</button>
-                </div>
-                <div class="flex gap-2">
-                    <input type="text" placeholder="住所またはURL" class="shop-loc w-full p-2 text-[10px] border rounded-lg bg-white" value="${data.loc || ''}">
-                    <input type="number" placeholder="値段" class="shop-price w-24 p-2 text-xs border rounded-lg bg-white font-bold" value="${data.price || ''}">
-                </div>
-            `;
+            div.innerHTML = `<button onclick="this.parentElement.remove()" class="absolute top-1 right-2 text-orange-300 text-xs font-bold">×</button><div class="flex gap-2"><input type="text" id="shop-${id}" placeholder="お店名" class="shop-name w-full p-2 text-xs border rounded-lg bg-white font-bold" value="${data.shop || ''}"><button onclick="searchNearby('shop-${id}')" class="bg-blue-500 text-white px-2 rounded-lg text-[8px] font-bold whitespace-nowrap shadow-sm font-bold">📍近くを検索</button></div><div class="flex gap-2"><input type="text" placeholder="住所・URL" class="shop-loc w-full p-2 text-[10px] border rounded-lg bg-white" value="${data.loc || ''}"><input type="number" placeholder="値段" class="shop-price w-24 p-2 text-xs border rounded-lg bg-white font-bold" value="${data.price || ''}"></div>`;
             container.appendChild(div);
         }
 
@@ -193,7 +161,6 @@
                     await storageRef.put(file);
                     imageUrls.push(await storageRef.getDownloadURL());
                 }
-
                 const itemData = {
                     author: document.getElementById('author').value,
                     name: name,
@@ -205,21 +172,21 @@
                     memo: document.getElementById('memo').value.trim(),
                     prices: prices,
                     gourmetRating: document.getElementById('gourmet-rating').value,
-                    prefecture: document.getElementById('hotel-pref').value,
-                    interiorRating: document.getElementById('hotel-interior').value,
-                    mealRating: document.getElementById('hotel-meal').value,
-                    parentFish: document.getElementById('sushi-parent').value,
-                    speciesFish: document.getElementById('sushi-sub').value,
                     barcode: document.getElementById('barcode-val').value || "",
                     timestamp: Date.now()
                 };
                 if(imageUrls.length > 0) itemData.imageUrls = imageUrls;
-
                 const ref = editingId ? database.ref('items/' + editingId) : database.ref('items').push();
                 await ref.update(itemData);
-                if (editingId) startBrowseMode(); else goHome();
-            } catch (e) { alert("エラー: " + e.message); }
-            finally { saveBtn.disabled = false; }
+                
+                // 【バグ修正】文字をリセットして画面遷移
+                saveBtn.innerText = "保存しました！";
+                setTimeout(() => { 
+                    saveBtn.innerText = "保存して同期"; 
+                    saveBtn.disabled = false;
+                    if (editingId) startBrowseMode(); else goHome();
+                }, 800);
+            } catch (e) { alert("エラー: " + e.message); saveBtn.disabled = false; saveBtn.innerText = "保存して同期"; }
         }
 
         function displayData() {
@@ -238,12 +205,10 @@
                     
                     let priceHtml = '';
                     if (item.prices && item.prices.length > 0) {
-                        priceHtml = `<div class="grid grid-cols-1 gap-2 mt-3">` + item.prices.map(p => {
-                            // URLなら「購入サイト」ボタン、そうでないなら住所表示
+                        priceHtml = `<div class="grid grid-cols-1 gap-2 mt-3 font-bold">` + item.prices.map(p => {
                             const isUrl = p.loc.startsWith('http');
                             const locLabel = isUrl ? `🛒 購入サイト` : `📍 ${p.loc || '店舗'}`;
                             const locHref = isUrl ? p.loc : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.shop + ' ' + p.loc)}`;
-
                             return `
                             <div class="p-3 bg-gray-50 rounded-xl border border-gray-100 flex justify-between items-center shadow-sm">
                                 <div class="truncate mr-2">
@@ -251,31 +216,25 @@
                                     <a href="${locHref}" target="_blank" class="text-[9px] text-blue-500 underline font-bold">${locLabel}</a>
                                 </div>
                                 <div class="text-emerald-600 font-bold text-sm whitespace-nowrap">¥${Number(p.price).toLocaleString()}</div>
-                            </div>
-                        `}).join('') + `</div>`;
+                            </div>`;
+                        }).join('') + `</div>`;
                     }
 
-                    const div = document.createElement('div');
-                    div.className = 'bg-white rounded-3xl shadow-sm border p-5 relative text-left mb-6';
-                    
-                    // 原料ボックスの色分け（調味料タブのみ赤みのある枠にする）
                     const hoursTitle = item.category === 'item' ? '🧪 原材料・添加物を確認' : '🕒 営業時間・詳細';
                     const hoursBg = item.category === 'item' ? 'bg-red-50/70 border-red-100' : 'bg-blue-50/50 border-blue-100';
                     const hoursText = item.category === 'item' ? 'text-red-700' : 'text-blue-600';
 
+                    const div = document.createElement('div');
+                    div.className = 'bg-white rounded-3xl shadow-sm border p-5 relative text-left mb-6 font-bold';
                     div.innerHTML = `
                         ${item.imageUrls ? `<img src="${item.imageUrls[0]}" class="w-full h-44 object-cover rounded-2xl mb-4">` : ''}
-                        <div class="flex justify-between items-center mb-2 font-bold"><span class="text-[10px] text-emerald-600">👤 ${item.author}</span>${viewMode === 'my' ? `<div class="space-x-3 text-[10px]"><button onclick="editItem('${key}')" class="text-blue-500 font-bold">編集</button><button onclick="deleteItem('${key}')" class="text-red-400 font-bold">削除</button></div>` : ''}</div>
-                        <h3 class="font-bold text-lg leading-tight">${item.category === 'sushi' ? `${item.speciesFish} (${item.parentFish})` : item.name}</h3>
+                        <div class="flex justify-between items-center mb-2 font-bold"><span class="text-[10px] text-emerald-600 font-bold">👤 ${item.author}</span>${viewMode === 'my' ? `<div class="space-x-3 text-[10px] font-bold"><button onclick="editItem('${key}')" class="text-blue-500 font-bold">編集</button><button onclick="deleteItem('${key}')" class="text-red-400 font-bold">削除</button></div>` : ''}</div>
+                        <h3 class="font-bold text-lg leading-tight font-bold">${item.name}</h3>
                         ${stars}
-                        <div class="flex gap-4 mt-2 mb-1 font-bold">${item.location && item.category !== 'item' ? `<a href="${mapUrl}" target="_blank" class="text-blue-600 text-[10px] underline">📍 地図を開く</a>` : ''}${item.itemUrl && item.category !== 'item' ? `<a href="${item.itemUrl}" target="_blank" class="text-orange-600 text-[10px] underline">🛒 購入サイト</a>` : ''}</div>
+                        <div class="flex gap-4 mt-2 mb-1 font-bold">${item.location && item.category !== 'item' ? `<a href="${mapUrl}" target="_blank" class="text-blue-600 text-[10px] underline">📍 地図を開く</a>` : ''}${item.itemUrl && item.category !== 'item' ? `<a href="${item.itemUrl}" target="_blank" class="text-orange-600 text-[10px] underline font-bold">🛒 購入サイト</a>` : ''}</div>
                         ${priceHtml}
-                        ${item.category === 'hotel' ? `<p class="text-[10px] text-gray-500 font-bold mb-2">🏨 ${item.prefecture} | 内装:${item.interiorRating} 食事:${item.mealRating}</p>` : ''}
-                        
-                        ${item.hours ? `<details class="my-3 ${hoursBg} rounded-xl overflow-hidden border font-bold"><summary class="p-2 text-[10px] ${hoursText} flex justify-between"><span>${hoursTitle}</span> <span>▼</span></summary><div class="p-2 text-[10px] text-gray-700 border-t border-inherit whitespace-pre-wrap leading-relaxed font-bold">${item.hours}</div></details>` : ''}
-                        
+                        ${item.hours ? `<details class="my-3 ${hoursBg} rounded-xl overflow-hidden border font-bold"><summary class="p-2 text-[10px] ${hoursText} flex justify-between font-bold"><span>${hoursTitle}</span> <span>▼</span></summary><div class="p-2 text-[10px] text-gray-700 border-t border-inherit whitespace-pre-wrap leading-relaxed font-bold">${item.hours}</div></details>` : ''}
                         <div class="bg-emerald-50/50 p-4 rounded-xl border-l-4 border-emerald-400 text-xs whitespace-pre-wrap font-bold text-gray-600">${item.memo}</div>
-                        ${item.isPublic && viewMode === 'my' ? `<div class="absolute top-2 right-2 bg-blue-500 text-white text-[8px] px-2 py-0.5 rounded-full font-bold shadow-sm">職場公開中</div>` : ''}
                     `;
                     container.appendChild(div);
                 });
@@ -284,27 +243,18 @@
 
         function editItem(key) {
             database.ref('items/' + key).once('value').then(snap => {
-                const item = snap.val();
-                editingId = key; startManualMode();
+                const item = snap.val(); editingId = key; startManualMode();
                 document.getElementById('input-category').value = item.category;
                 toggleCategoryFields(item.category);
-                document.getElementById('author').value = item.author || 'しょうや';
                 document.getElementById('name').value = item.name || '';
                 document.getElementById('location').value = item.location || '';
                 document.getElementById('itemUrl').value = item.itemUrl || '';
                 document.getElementById('hours').value = item.hours || '';
                 document.getElementById('memo').value = item.memo || '';
                 document.getElementById('isPublic').checked = item.isPublic || false;
-                document.getElementById('gourmet-rating').value = item.gourmetRating || 3;
-                document.getElementById('hotel-pref').value = item.prefecture || '';
-                document.getElementById('hotel-interior').value = item.interiorRating || 3;
-                document.getElementById('hotel-meal').value = item.mealRating || 3;
-                document.getElementById('sushi-parent').value = item.parentFish || '';
-                document.getElementById('sushi-sub').value = item.speciesFish || '';
-                document.getElementById('barcode-val').value = item.barcode || '';
                 const priceContainer = document.getElementById('price-entry-list');
                 priceContainer.innerHTML = '';
-                if(item.prices && item.prices.length > 0) item.prices.forEach(p => addPriceField(p));
+                if(item.prices) item.prices.forEach(p => addPriceField(p));
                 else if(item.category === 'item') addPriceField();
                 document.getElementById('save-btn').innerText = "上書き更新する";
                 window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -320,7 +270,7 @@
         function setViewMode(mode) { viewMode = mode; document.getElementById('body').classList.toggle('share-mode-bg', mode === 'share'); displayData(); }
         function showQR() { const url = `${window.location.origin}${window.location.pathname}?view=share`; document.getElementById('qr-code-area').innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}">`; document.getElementById('qr-modal').style.display = 'flex'; }
         function closeQR() { document.getElementById('qr-modal').style.display = 'none'; }
-        function resetForm() { ['name','location','itemUrl','hours','memo','photo','barcode-val','hotel-pref','sushi-parent','sushi-sub'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value = ''; }); document.getElementById('price-entry-list').innerHTML = ''; document.getElementById('isPublic').checked = false; editingId = null; }
+        function resetForm() { ['name','location','itemUrl','hours','memo','photo','barcode-val'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value = ''; }); document.getElementById('price-entry-list').innerHTML = ''; document.getElementById('isPublic').checked = false; editingId = null; }
     </script>
 </body>
 </html>
