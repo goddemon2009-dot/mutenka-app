@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>こだわり記録帳 - プロ版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .active-tab { border-bottom: 4px solid #10b981; color: #059669; }
+        .card-content * { text-align: left !important; }
+        header h1 { text-align: center !important; width: 100%; }
+        input[type="range"] { accent-color: #10b981; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .share-mode-bg { background-color: #f0fdf4; }
+        .preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; margin-bottom: 10px; }
+        .preview-img { width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 2px solid #ddd; }
+    </style>
+    <link rel="manifest" href="site.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
+  }
+</script>
+</head>
+<body id="body" class="bg-gray-50 min-h-screen pb-20 transition-colors duration-300">
+
+<div id="app" class="max-w-2xl mx-auto p-4">
+    <header class="mb-6">
+        <h1 id="main-title" class="text-2xl font-bold text-green-700">こだわり記録帳</h1>
+        <div class="flex justify-center mt-2">
+            <div class="inline-flex bg-gray-200 rounded-lg p-1">
+                <button onclick="setViewMode('my')" id="mode-my" class="px-4 py-1 rounded-md text-sm font-bold bg-white shadow-sm text-green-700">自分用</button>
+                <button onclick="setViewMode('share')" id="mode-share" class="px-4 py-1 rounded-md text-sm font-bold text-gray-500">職場共有用</button>
+            </div>
+        </div>
+    </header>
+
+    <div id="input-section">
+        <div class="flex overflow-x-auto gap-4 mb-6 pb-2 no-scrollbar">
+            <button onclick="changeCategory('Gourmet')" id="btn-Gourmet" class="category-btn whitespace-nowrap pb-2 font-medium transition active-tab">グルメ</button>
+            <button onclick="changeCategory('Seasoning')" id="btn-Seasoning" class="category-btn whitespace-nowrap pb-2 font-medium transition text-gray-400">調味料</button>
+            <button onclick="changeCategory('Daily')" id="btn-Daily" class="category-btn whitespace-nowrap pb-2 font-medium transition text-gray-400">日用品</button>
+            <button onclick="changeCategory('Hotel')" id="btn-Hotel" class="category-btn whitespace-nowrap pb-2 font-medium transition text-gray-400">ホテル</button>
+            <button onclick="changeCategory('Sushi')" id="btn-Sushi" class="category-btn whitespace-nowrap pb-2 font-medium transition text-gray-400">寿司・品種</button>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-sm border mb-8">
+            <div class="grid grid-cols-1 gap-4">
+                <div id="preview-container" class="preview-grid"></div>
+                <input type="text" id="input-name" placeholder="名称（店名など）" class="border p-2 rounded w-full">
+                
+                <div id="fields-hotel" class="hidden space-y-4">
+                    <input type="text" id="hotel-pref" placeholder="都道府県" class="border p-2 rounded w-full">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label class="text-[10px] text-gray-400">内装評価</label><input type="range" id="hotel-interior" min="1" max="5" value="3" class="w-full"></div>
+                        <div><label class="text-[10px] text-gray-400">食事評価</label><input type="range" id="hotel-meal" min="1" max="5" value="3" class="w-full"></div>
+                    </div>
+                </div>
+
+                <div id="fields-sushi" class="hidden space-y-4">
+                    <div class="flex gap-2">
+                        <input type="text" id="sushi-parent" placeholder="ネタ" class="border p-2 rounded w-1/2">
+                        <input type="text" id="sushi-sub" placeholder="品種" class="border p-2 rounded w-1/2">
+                    </div>
+                </div>
+
+                <textarea id="input-memo" placeholder="こだわりメモ" class="border p-2 rounded h-24 w-full"></textarea>
+
+                <div class="flex flex-col gap-3">
+                    <label class="flex items-center gap-2 cursor-pointer p-3 border-2 border-dashed border-gray-300 rounded-lg justify-center hover:bg-gray-50 transition">
+                        <span class="text-sm text-gray-600">📸 写真を複数追加</span>
+                        <input type="file" id="input-image" accept="image/*" multiple class="hidden" onchange="handleMultipleImages(this)">
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer p-2 bg-green-50 rounded">
+                        <input type="checkbox" id="input-public" class="w-4 h-4"><span class="text-sm font-medium text-green-800">職場の仲間に公開する</span>
+                    </label>
+                </div>
+                <button onclick="addRecord()" class="bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700">保存する</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="record-list" class="space-y-6"></div>
+
+    <div class="mt-12 pt-8 border-t border-gray-200">
+        <h3 class="text-sm font-bold text-gray-400 mb-4 text-center">データ管理設定</h3>
+        <div class="flex gap-4 justify-center">
+            <button onclick="exportData()" class="text-xs bg-gray-200 px-4 py-2 rounded text-gray-600 font-bold hover:bg-gray-300">バックアップ保存</button>
+            <label class="text-xs bg-gray-200 px-4 py-2 rounded text-gray-600 font-bold hover:bg-gray-300 cursor-pointer">
+                データを復元
+                <input type="file" accept=".json" class="hidden" onchange="importData(this)">
+            </label>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentCategory = 'Gourmet';
+    let viewMode = 'my';
+    let currentImages = [];
+    let records = JSON.parse(localStorage.getItem('mutenka_records') || '[]');
+
+    function setViewMode(mode) {
+        viewMode = mode;
+        document.getElementById('body').classList.toggle('share-mode-bg', mode === 'share');
+        document.getElementById('input-section').classList.toggle('hidden', mode === 'share');
+        document.getElementById('main-title').innerText = mode === 'share' ? "✨ おすすめシェア名簿" : "こだわり記録帳";
+        renderRecords();
+    }
+
+    async function handleMultipleImages(input) {
+        if (!input.files) return;
+        for (let file of input.files) {
+            const data = await resizeImage(file);
+            currentImages.push(data);
+        }
+        renderPreview();
+    }
+
+    function resizeImage(file) {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const max = 500; // 複数枚なので少し小さめに圧縮
+                    let w = img.width, h = img.height;
+                    if (w > h) { if (w > max) { h *= max / w; w = max; } }
+                    else { if (h > max) { w *= max / h; h = max; } }
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    resolve(canvas.toDataURL('image/jpeg', 0.6));
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function renderPreview() {
+        const container = document.getElementById('preview-container');
+        container.innerHTML = currentImages.map(img => `<img src="${img}" class="preview-img">`).join('');
+    }
+
+    function changeCategory(cat) {
+        currentCategory = cat;
+        document.querySelectorAll('.category-btn').forEach(btn => btn.className = 'category-btn whitespace-nowrap pb-2 font-medium transition text-gray-400');
+        document.getElementById(`btn-${cat}`).className = 'category-btn whitespace-nowrap pb-2 font-medium transition active-tab';
+        document.getElementById('fields-hotel').classList.toggle('hidden', cat !== 'Hotel');
+        document.getElementById('fields-sushi').classList.toggle('hidden', cat !== 'Sushi');
+    }
+
+    function addRecord() {
+        const name = document.getElementById('input-name').value;
+        if (!name) return alert('名称を入力してください');
+        const record = {
+            id: Date.now(), category: currentCategory, name, 
+            memo: document.getElementById('input-memo').value,
+            images: currentImages, isPublic: document.getElementById('input-public').checked,
+            date: new Date().toLocaleDateString(),
+            prefecture: document.getElementById('hotel-pref').value,
+            interiorRating: document.getElementById('hotel-interior').value,
+            mealRating: document.getElementById('hotel-meal').value,
+            parentCategory: document.getElementById('sushi-parent').value,
+            subCategory: document.getElementById('sushi-sub').value
+        };
+        try {
+            records.unshift(record);
+            localStorage.setItem('mutenka_records', JSON.stringify(records));
+            renderRecords(); resetForm();
+        } catch (e) { alert('容量不足です。写真を減らしてください。'); }
+    }
+
+    function resetForm() {
+        ['input-name', 'input-memo', 'hotel-pref', 'sushi-parent', 'sushi-sub'].forEach(id => document.getElementById(id).value = '');
+        currentImages = []; document.getElementById('preview-container').innerHTML = '';
+        document.getElementById('input-public').checked = false;
+    }
+
+    function renderRecords() {
+        const list = document.getElementById('record-list');
+        const filtered = viewMode === 'share' ? records.filter(r => r.isPublic) : records;
+        list.innerHTML = `<h2 class="font-bold text-gray-700 mb-4">${viewMode === 'share' ? '職場へのおすすめ' : '最近の記録'}</h2>` + 
+        filtered.map(r => `
+            <div class="bg-white rounded-xl border shadow-sm overflow-hidden mb-6">
+                ${r.images && r.images.length ? `<div class="flex overflow-x-auto snap-x no-scrollbar">${r.images.map(img => `<img src="${img}" class="w-full h-56 object-cover snap-center flex-shrink-0">`).join('')}</div>` : ''}
+                <div class="p-4">
+                    <div class="text-[10px] text-gray-400 mb-1">${r.date} / ${getCategoryName(r.category)}</div>
+                    <div class="font-bold text-lg text-green-900">${r.category === 'Sushi' && r.subCategory ? r.subCategory : r.name}</div>
+                    ${r.category === 'Hotel' ? `<div class="text-sm text-gray-600">📍 ${r.prefecture} (内装:${r.interiorRating} 食事:${r.mealRating})</div>` : ''}
+                    ${r.category === 'Sushi' ? `<div class="text-sm text-green-600 font-medium">🍣 ${r.parentCategory} @ ${r.name}</div>` : ''}
+                    <p class="text-gray-700 text-sm mt-3 pt-3 border-t border-gray-50">${r.memo}</p>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function getCategoryName(cat) {
+        return { Gourmet: 'グルメ', Seasoning: '調味料', Daily: '日用品', Hotel: 'ホテル', Sushi: '寿司' }[cat] || cat;
+    }
+
+    function exportData() {
+        const data = localStorage.getItem('mutenka_records');
+        const blob = new Blob([data], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `mutenka_backup_${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+    }
+
+    function importData(input) {
+        const file = input.files[0];
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            if (confirm('既存のデータが上書きされますが、よろしいですか？')) {
+                localStorage.setItem('mutenka_records', e.target.result);
+                location.reload();
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    renderRecords();
+</script>
+</body>
+</html>
