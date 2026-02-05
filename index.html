@@ -26,7 +26,7 @@
         <h1 class="text-xl font-bold">こだわりガイドブック</h1>
         <div id="mode-switcher" class="flex justify-center mt-3 hidden">
             <div class="inline-flex bg-emerald-700/50 rounded-lg p-1 gap-1">
-                <button onclick="setViewMode('my')" id="mode-my" class="px-4 py-1 rounded-md text-[10px] font-bold bg-white text-emerald-700">家族用</button>
+                <button onclick="setViewMode('my')" id="mode-my" class="px-4 py-1 rounded-md text-[10px] font-bold bg-white text-emerald-700 shadow-sm">家族用</button>
                 <button onclick="setViewMode('share')" id="mode-share" class="px-4 py-1 rounded-md text-[10px] font-bold text-white/70">職場共有</button>
             </div>
         </div>
@@ -37,7 +37,7 @@
             <button onclick="startCameraMode()" class="menu-btn bg-blue-600 text-white">
                 <span class="text-4xl mb-2">📸</span>
                 <span class="font-bold text-lg text-white">カメラでスマート入力</span>
-                <span class="text-[10px] opacity-80">バーコード・AI解析</span>
+                <span class="text-[10px] opacity-80 text-white/80">バーコード・AI解析</span>
             </button>
             <button onclick="startManualMode()" class="menu-btn bg-white text-emerald-700 border-2 border-emerald-100">
                 <span class="text-4xl mb-2">📝</span>
@@ -47,7 +47,7 @@
             <button onclick="startBrowseMode()" class="menu-btn bg-emerald-500 text-white">
                 <span class="text-4xl mb-2">👀</span>
                 <span class="font-bold text-lg text-white">みんなの記録を見る</span>
-                <span class="text-[10px] opacity-80">保存データの閲覧・編集</span>
+                <span class="text-[10px] opacity-80 text-white/80">保存データの閲覧・編集</span>
             </button>
         </div>
 
@@ -79,43 +79,36 @@
                     <button onclick="addPriceField()" class="w-full py-2 bg-orange-50 text-orange-600 border border-orange-200 rounded-xl text-xs font-bold">+ お店・価格を追加</button>
                 </div>
 
-                <div id="field-location"><input type="text" id="location" placeholder="場所・住所" class="w-full p-3 border rounded-xl text-sm"></div>
+                <div id="field-location"><input type="text" id="location" placeholder="場所・住所（Map連携）" class="w-full p-3 border rounded-xl text-sm"></div>
+                <div id="field-url"><input type="url" id="itemUrl" placeholder="🔗 通販URL" class="w-full p-3 border border-blue-100 rounded-xl text-sm bg-blue-50/20"></div>
                 
                 <div id="fields-gourmet-rating" class="space-y-1 bg-yellow-50 p-3 rounded-xl border border-yellow-100">
                     <label class="text-[10px] font-bold text-yellow-600 ml-1">満足度(1-5)</label>
                     <input type="range" id="gourmet-rating" min="1" max="5" value="3" class="w-full accent-yellow-500">
                 </div>
-
                 <div id="fields-hotel" class="hidden space-y-3 bg-gray-50 p-3 rounded-xl border border-gray-100">
                     <input type="text" id="hotel-pref" placeholder="都道府県" class="w-full p-2 border rounded text-sm bg-white">
-                    <div class="grid grid-cols-2 gap-2 text-[10px] font-bold text-gray-500">
-                        <div>内装(1-5)<input type="number" id="hotel-interior" min="1" max="5" value="3" class="w-full p-1 border rounded bg-white"></div>
-                        <div>食事(1-5)<input type="number" id="hotel-meal" min="1" max="5" value="3" class="w-full p-1 border rounded bg-white"></div>
-                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-[10px] font-bold text-gray-500"><div>内装(1-5)<input type="number" id="hotel-interior" min="1" max="5" value="3" class="w-full p-1 border rounded"></div><div>食事(1-5)<input type="number" id="hotel-meal" min="1" max="5" value="3" class="w-full p-1 border rounded"></div></div>
                 </div>
-
                 <div id="fields-sushi" class="hidden space-y-2 bg-gray-50 p-3 rounded-xl border border-gray-100">
-                    <input type="text" id="sushi-parent" placeholder="魚種" class="w-full p-2 border rounded text-sm bg-white">
-                    <input type="text" id="sushi-sub" placeholder="品種" class="w-full p-2 border rounded text-sm bg-white">
+                    <input type="text" id="sushi-parent" placeholder="魚種" class="w-full p-2 border rounded text-sm bg-white"><input type="text" id="sushi-sub" placeholder="品種" class="w-full p-2 border rounded text-sm bg-white">
                 </div>
 
-                <div id="field-url"><input type="url" id="itemUrl" placeholder="🔗 通販URL" class="w-full p-3 border border-blue-100 rounded-xl text-sm bg-blue-50/20"></div>
                 <textarea id="hours" placeholder="営業時間・詳細情報" class="w-full p-3 border rounded-xl h-20 text-sm"></textarea>
-                
                 <div class="p-4 border-2 border-dashed border-emerald-100 rounded-xl bg-emerald-50/20"><input type="file" id="photo" accept="image/*" multiple class="text-xs w-full" onchange="processOCR(this)"><div id="ocr-status" class="text-[9px] text-blue-600 font-bold mt-2"></div></div>
                 <textarea id="memo" placeholder="こだわりメモ" class="w-full p-3 border rounded-xl h-24 text-sm"></textarea>
                 <label class="flex items-center gap-3 p-3 bg-blue-50 rounded-xl cursor-pointer border border-blue-100"><input type="checkbox" id="isPublic" class="w-5 h-5 accent-blue-600"><span class="text-sm font-bold text-blue-700">職場の仲間に公開する</span></label>
-                <button onclick="saveData()" id="save-btn" class="w-full bg-emerald-500 text-white py-4 rounded-2xl font-bold shadow-lg active:scale-95 transition-all">保存して同期</button>
+                <button onclick="saveData()" id="save-btn" class="w-full bg-emerald-500 text-white py-4 rounded-2xl font-bold shadow-lg">保存して同期</button>
             </div>
         </div>
 
         <div id="section-browse" class="hidden">
             <div class="flex justify-between items-center mb-4"><button onclick="goHome()" class="text-emerald-700 font-bold text-sm">← 戻る</button><div class="flex gap-2 w-2/3"><input type="text" id="searchInput" oninput="displayData()" placeholder="🔍 検索..." class="p-2 border rounded-full text-xs w-full outline-none bg-white shadow-sm"><button onclick="showQR()" id="btn-show-qr" class="bg-white border border-emerald-200 p-2 rounded-full shadow-sm text-lg">📲</button></div></div>
-            <nav class="flex overflow-x-auto gap-2 mb-6 no-scrollbar border-b pb-2"><button onclick="switchTab('gourmet')" id="tab-gourmet" class="px-3 py-1 whitespace-nowrap active-tab font-bold text-sm">グルメ</button><button onclick="switchTab('item')" id="tab-item" class="px-3 py-1 whitespace-nowrap font-bold text-sm text-gray-400">調味料・日用品</button><button onclick="switchTab('hotel')" id="tab-hotel" class="px-3 py-1 whitespace-nowrap font-bold text-sm text-gray-400">ホテル</button><button onclick="switchTab('sushi')" id="tab-sushi" class="px-3 py-1 whitespace-nowrap font-bold text-sm text-gray-400">寿司</button></nav>
+            <nav class="flex overflow-x-auto gap-2 mb-6 no-scrollbar border-b pb-2 font-bold"><button onclick="switchTab('gourmet')" id="tab-gourmet" class="px-3 py-1 whitespace-nowrap active-tab text-sm">グルメ</button><button onclick="switchTab('item')" id="tab-item" class="px-3 py-1 whitespace-nowrap text-sm text-gray-400">調味料・日用品</button><button onclick="switchTab('hotel')" id="tab-hotel" class="px-3 py-1 whitespace-nowrap text-sm text-gray-400">ホテル</button><button onclick="switchTab('sushi')" id="tab-sushi" class="px-3 py-1 whitespace-nowrap text-sm text-gray-400">寿司</button></nav>
             <div id="list-container" class="space-y-6 pb-20"></div>
         </div>
 
-        <div id="qr-modal" class="fixed inset-0 bg-black/80 z-[100] hidden items-center justify-center p-6"><div class="bg-white p-8 rounded-3xl text-center w-full max-w-xs"><h3 class="font-bold text-emerald-700 mb-4">職場共有用QR</h3><div id="qr-code-area" class="bg-gray-100 aspect-square w-full mb-4 flex items-center justify-center rounded-xl overflow-hidden"></div><button onclick="closeQR()" class="w-full py-3 bg-gray-200 text-gray-600 rounded-xl font-bold">閉じる</button></div></div>
+        <div id="qr-modal" class="fixed inset-0 bg-black/80 z-[100] hidden items-center justify-center p-6"><div class="bg-white p-8 rounded-3xl text-center w-full max-xs"><h3 class="font-bold text-emerald-700 mb-4 font-bold">職場共有用QR</h3><div id="qr-code-area" class="bg-gray-100 aspect-square w-full mb-4 flex items-center justify-center rounded-xl overflow-hidden"></div><button onclick="closeQR()" class="w-full py-3 bg-gray-200 text-gray-600 rounded-xl font-bold">閉じる</button></div></div>
     </main>
 
     <script>
@@ -133,7 +126,10 @@
             document.getElementById('fields-hotel').classList.toggle('hidden', cat !== 'hotel');
             document.getElementById('fields-sushi').classList.toggle('hidden', cat !== 'sushi');
             document.getElementById('fields-comparison').classList.toggle('hidden', cat !== 'item');
-            document.getElementById('field-url').classList.toggle('hidden', cat === 'hotel' || cat === 'sushi');
+            // 重複フィールドの非表示（日用品タブのみ隠す）
+            document.getElementById('field-location').classList.toggle('hidden', cat === 'item');
+            document.getElementById('field-url').classList.toggle('hidden', cat === 'item' || cat === 'hotel' || cat === 'sushi');
+            
             if(cat === 'item' && document.getElementById('price-entry-list').children.length === 0) addPriceField();
         }
 
@@ -205,13 +201,14 @@
                     if (viewMode === 'share' && !item.isPublic) return;
 
                     const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + " " + (item.location || ""))}`;
-                    const stars = item.gourmetRating ? "⭐".repeat(item.gourmetRating) : "";
+                    // 星を横並びにするflexコンテナ
+                    const stars = item.gourmetRating ? `<div class="flex gap-0.5 text-yellow-500 text-xs mt-1 font-bold">` + "⭐".repeat(item.gourmetRating) + `</div>` : "";
                     
                     let priceHtml = '';
                     if (item.prices && item.prices.length > 0) {
                         priceHtml = `<div class="grid grid-cols-1 gap-2 mt-3">` + item.prices.map(p => `
                             <div class="p-3 bg-gray-50 rounded-xl border border-gray-100 flex justify-between items-center">
-                                <div class="truncate mr-2"><div class="text-[11px] font-bold text-gray-800">${p.shop || '不明な店'}</div><div class="text-[9px] text-blue-500 underline truncate w-32"><a href="${p.loc.startsWith('http') ? p.loc : '#'}" target="_blank">${p.loc || '-'}</a></div></div>
+                                <div class="truncate mr-2"><div class="text-[11px] font-bold text-gray-800">${p.shop || '不明'}</div><div class="text-[9px] text-blue-500 underline truncate w-32"><a href="${p.loc.startsWith('http') ? p.loc : '#'}" target="_blank">${p.loc || '-'}</a></div></div>
                                 <div class="text-emerald-600 font-bold text-sm whitespace-nowrap">¥${Number(p.price).toLocaleString()}</div>
                             </div>
                         `).join('') + `</div>`;
@@ -223,12 +220,12 @@
                         ${item.imageUrls ? `<img src="${item.imageUrls[0]}" class="w-full h-44 object-cover rounded-2xl mb-4">` : ''}
                         <div class="flex justify-between items-center mb-2 font-bold"><span class="text-[10px] text-emerald-600">👤 ${item.author}</span>${viewMode === 'my' ? `<div class="space-x-3 text-[10px]"><button onclick="editItem('${key}')" class="text-blue-500 font-bold">編集</button><button onclick="deleteItem('${key}')" class="text-red-400 font-bold">削除</button></div>` : ''}</div>
                         <h3 class="font-bold text-lg leading-tight">${item.category === 'sushi' ? `${item.speciesFish} (${item.parentFish})` : item.name}</h3>
-                        <div class="flex text-yellow-500 text-xs mt-1 font-bold">${stars}</div>
-                        <div class="flex gap-4 mt-2 mb-3 font-bold">${item.location ? `<a href="${mapUrl}" target="_blank" class="text-blue-600 text-[10px] underline">📍 地図</a>` : ''}${item.itemUrl ? `<a href="${item.itemUrl}" target="_blank" class="text-orange-600 text-[10px] underline">🛒 通販</a>` : ''}</div>
+                        ${stars}
+                        <div class="flex gap-4 mt-2 mb-3 font-bold">${item.location && item.category !== 'item' ? `<a href="${mapUrl}" target="_blank" class="text-blue-600 text-[10px] underline">📍 地図</a>` : ''}${item.itemUrl && item.category !== 'item' ? `<a href="${item.itemUrl}" target="_blank" class="text-orange-600 text-[10px] underline">🛒 通販</a>` : ''}</div>
                         ${priceHtml}
                         ${item.category === 'hotel' ? `<p class="text-[10px] text-gray-500 font-bold mb-2">🏨 ${item.prefecture} | 内装:${item.interiorRating} 食事:${item.mealRating}</p>` : ''}
-                        ${item.hours ? `<details class="my-3 bg-blue-50/50 rounded-xl overflow-hidden border border-blue-100 font-bold"><summary class="p-2 text-[10px] text-blue-600 flex justify-between">🕒 営業時間・詳細 <span>▼</span></summary><div class="p-2 text-[10px] text-gray-700 border-t border-blue-100 whitespace-pre-wrap">${item.hours}</div></details>` : ''}
-                        <div class="bg-emerald-50/50 p-4 rounded-xl border-l-4 border-emerald-400 text-xs whitespace-pre-wrap mt-2">${item.memo}</div>
+                        ${item.hours ? `<details class="my-3 bg-blue-50/50 rounded-xl overflow-hidden border border-blue-100 font-bold"><summary class="p-2 text-[10px] text-blue-600 flex justify-between">🕒 営業時間・詳細 <span>▼</span></summary><div class="p-2 text-[10px] text-gray-700 border-t whitespace-pre-wrap">${item.hours}</div></details>` : ''}
+                        <div class="bg-emerald-50/50 p-4 rounded-xl border-l-4 border-emerald-400 text-xs mt-3 whitespace-pre-wrap">${item.memo}</div>
                         ${item.isPublic && viewMode === 'my' ? `<div class="absolute top-2 right-2 bg-blue-500 text-white text-[8px] px-2 py-0.5 rounded-full font-bold shadow-sm">職場公開中</div>` : ''}
                     `;
                     container.appendChild(div);
@@ -257,7 +254,7 @@
                 document.getElementById('sushi-sub').value = item.speciesFish || '';
                 document.getElementById('barcode-val').value = item.barcode || '';
                 
-                // 価格比較ブロックの復元
+                // 比較ブロックの完全復元
                 const priceContainer = document.getElementById('price-entry-list');
                 priceContainer.innerHTML = '';
                 if(item.prices && item.prices.length > 0) {
