@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>家族の無添加ライフ管理 - 最終究極版</title>
+    <title>家族の無添加ライフ管理 - 究極統合版 v2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
@@ -31,14 +31,13 @@
 
     <nav id="category-nav" class="flex overflow-x-auto bg-white shadow-sm sticky top-[108px] z-30 border-b no-scrollbar">
         <button onclick="switchTab('gourmet')" id="tab-gourmet" class="p-3 whitespace-nowrap min-w-[80px] active-tab font-bold">グルメ</button>
-        <button onclick="switchTab('shop')" id="tab-shop" class="p-3 whitespace-nowrap min-w-[80px] font-bold">スーパー</button>
         <button onclick="switchTab('item')" id="tab-item" class="p-3 whitespace-nowrap min-w-[80px] font-bold">調味料・日用品</button>
         <button onclick="switchTab('hotel')" id="tab-hotel" class="p-3 whitespace-nowrap min-w-[80px] font-bold">ホテル</button>
         <button onclick="switchTab('sushi')" id="tab-sushi" class="p-3 whitespace-nowrap min-w-[80px] font-bold">寿司</button>
     </nav>
 
     <div class="p-4 sticky top-[156px] bg-inherit z-20">
-        <input type="text" id="searchInput" oninput="displayData()" placeholder="🔍 検索..." class="w-full p-3 rounded-full border shadow-sm outline-none bg-white">
+        <input type="text" id="searchInput" oninput="displayData()" placeholder="🔍 名前やメモで検索..." class="w-full p-3 rounded-full border shadow-sm outline-none bg-white">
     </div>
 
     <main class="p-4 max-w-md mx-auto">
@@ -51,11 +50,21 @@
                     <option value="ふみひこ">👨 ふみひこ</option>
                 </select>
 
-                <input type="text" id="name" placeholder="名称（店名・商品名）" class="w-full p-2.5 border rounded-lg text-sm">
+                <div class="flex gap-2">
+                    <input type="text" id="name" placeholder="名称（店名・商品名）" class="w-full p-2.5 border rounded-lg text-sm">
+                </div>
 
                 <div id="fields-common" class="space-y-4">
                     <input type="text" id="location" placeholder="場所・住所（店舗の場合）" class="w-full p-2.5 border rounded-lg text-sm">
-                    <input type="url" id="itemUrl" placeholder="🔗 通販サイトURL（Amazon/楽天など）" class="w-full p-2.5 border border-blue-200 rounded-lg text-sm bg-blue-50/30">
+                    
+                    <div class="flex flex-col gap-1">
+                        <div class="flex gap-2">
+                            <input type="url" id="itemUrl" placeholder="🔗 通販サイトURL" class="w-full p-2.5 border border-blue-200 rounded-lg text-sm bg-blue-50/30">
+                            <button onclick="fetchUrlData()" class="bg-blue-500 text-white px-3 rounded-lg text-[10px] font-bold whitespace-nowrap active:scale-95">✨取得</button>
+                        </div>
+                        <p class="text-[8px] text-gray-400 px-1">※URLから名前を自動入力（一部サイトのみ）</p>
+                    </div>
+                    
                     <textarea id="hours" placeholder="営業時間・詳細情報" class="w-full p-2.5 border rounded-lg h-20 text-sm"></textarea>
                 </div>
 
@@ -112,6 +121,37 @@
         let currentTab = 'gourmet';
         let viewMode = 'my';
         let editingId = null;
+
+        // URLから情報を自動取得する（プロキシ経由）
+        async function fetchUrlData() {
+            const url = document.getElementById('itemUrl').value;
+            if (!url) return alert('URLを入力してください');
+            
+            const btn = event.target;
+            btn.innerText = "読込中...";
+            
+            try {
+                // ブラウザの制限(CORS)を回避するための無料プロキシを使用
+                const proxyUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(url);
+                const response = await fetch(proxyUrl);
+                const data = await response.json();
+                
+                // 簡易的なタイトル抽出
+                const doc = new DOMParser().parseFromString(data.contents, "text/html");
+                const title = doc.querySelector("title")?.innerText || "";
+                const cleanTitle = title.split(/[|－-]/)[0].trim(); // ショップ名などを削る
+
+                if (cleanTitle) {
+                    document.getElementById('name').value = cleanTitle;
+                    alert('商品名を仮入力しました。微調整してください。');
+                }
+            } catch (e) {
+                console.error(e);
+                alert('自動取得に失敗しました。手動で入力してください。');
+            } finally {
+                btn.innerText = "✨取得";
+            }
+        }
 
         function setViewMode(mode) {
             viewMode = mode;
@@ -206,7 +246,7 @@
                     const item = data[key];
                     if (item.category !== currentTab) return;
                     if (viewMode === 'share' && !item.isPublic) return;
-                    if (searchTerm && !item.name.toLowerCase().includes(searchTerm) && !item.location?.toLowerCase().includes(searchTerm)) return;
+                    if (searchTerm && !item.name.toLowerCase().includes(searchTerm) && !item.memo?.toLowerCase().includes(searchTerm)) return;
 
                     const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + item.location)}`;
 
@@ -236,21 +276,22 @@
                             </h3>
                             
                             <div class="flex gap-4 mt-2 mb-3">
-                                ${item.location ? `<a href="${mapUrl}" target="_blank" class="text-blue-600 text-xs font-bold underline">📍 地図を見る</a>` : ''}
-                                ${item.itemUrl ? `<a href="${item.itemUrl}" target="_blank" class="text-orange-600 text-xs font-bold underline">🛒 通販サイトへ</a>` : ''}
+                                ${item.location ? `<a href="${mapUrl}" target="_blank" class="text-blue-600 text-xs font-bold underline">📍 地図</a>` : ''}
+                                ${item.itemUrl ? `<a href="${item.itemUrl}" target="_blank" class="text-orange-600 text-xs font-bold underline">🛒 通販サイト</a>` : ''}
                             </div>
                             
                             ${item.category === 'hotel' ? `<p class="text-[10px] text-gray-500 font-bold mb-2">🏢 ${item.prefecture} | 内装:${item.interiorRating} 食事:${item.mealRating}</p>` : ''}
                             
                             ${item.hours ? `
                                 <details class="my-4 bg-blue-50/50 rounded-xl border border-blue-100 overflow-hidden">
-                                    <summary class="p-3 text-[11px] font-bold text-blue-600 flex justify-between items-center">🕒 営業時間・詳細情報 <span>▼</span></summary>
+                                    <summary class="p-3 text-[11px] font-bold text-blue-600 flex justify-between items-center">🕒 詳細情報・営業時間 <span>▼</span></summary>
                                     <div class="px-3 pb-3 text-xs text-gray-700 whitespace-pre-wrap leading-relaxed border-t border-blue-100 pt-2 font-bold">${item.hours}</div>
                                 </details>
                             ` : ''}
                             
                             <div class="bg-emerald-50/40 p-4 rounded-xl border-l-4 border-emerald-400 text-sm text-gray-700 whitespace-pre-wrap mt-2">${item.memo}</div>
                             ${item.price ? `<p class="text-right text-[10px] text-gray-400 mt-2 font-bold">参考価格: ¥${Number(item.price).toLocaleString()}</p>` : ''}
+                            ${item.isPublic && viewMode === 'my' ? `<span class="absolute top-2 right-2 bg-blue-500 text-white text-[8px] px-2 py-1 rounded-full font-bold">公開中</span>` : ''}
                         </div>
                     `;
                     container.appendChild(div);
