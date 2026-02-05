@@ -3,251 +3,281 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>こだわり記録帳 - フルスペック版</title>
+    <title>家族の無添加ライフ管理 Pro - 完全統合版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-storage-compat.js"></script>
     <style>
-        .active-tab { border-bottom: 4px solid #10b981; color: #059669; }
-        .card-content * { text-align: left !important; }
-        header h1 { text-align: center !important; width: 100%; }
-        input[type="range"] { accent-color: #10b981; }
+        .active-tab { border-bottom: 4px solid #10b981; color: #10b981; }
+        .force-left { text-align: left !important; display: block !important; width: 100%; }
+        summary { cursor: pointer; list-style: none; outline: none; }
+        summary::-webkit-details-marker { display: none; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .share-mode-bg { background-color: #f0fdf4; }
-        .preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; margin-bottom: 10px; }
-        .preview-img { width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 2px solid #ddd; }
     </style>
 </head>
-<body id="body" class="bg-gray-50 min-h-screen pb-20 transition-colors duration-300">
+<body class="bg-gray-100 text-gray-900 font-sans">
 
-<div id="app" class="max-w-2xl mx-auto p-4">
-    <header class="mb-6 text-center">
-        <h1 id="main-title" class="text-2xl font-bold text-green-700">こだわり記録帳</h1>
-        <div class="flex justify-center mt-2">
-            <div class="inline-flex bg-gray-200 rounded-lg p-1">
-                <button onclick="setViewMode('my')" id="mode-my" class="px-4 py-1 rounded-md text-sm font-bold bg-white shadow-sm text-green-700">自分用</button>
-                <button onclick="setViewMode('share')" id="mode-share" class="px-4 py-1 rounded-md text-sm font-bold text-gray-500">職場共有用</button>
-            </div>
-        </div>
+    <header class="bg-emerald-600 text-white p-4 shadow-lg sticky top-0 z-40">
+        <h1 class="text-xl font-bold text-center">家族の無添加ライフ管理</h1>
     </header>
 
-    <div id="input-section">
-        <div class="flex overflow-x-auto gap-4 mb-6 pb-2 no-scrollbar">
-            <button onclick="changeCategory('Gourmet')" id="btn-Gourmet" class="category-btn whitespace-nowrap pb-2 font-medium transition active-tab">グルメ</button>
-            <button onclick="changeCategory('Seasoning')" id="btn-Seasoning" class="category-btn whitespace-nowrap pb-2 font-medium transition text-gray-400">調味料</button>
-            <button onclick="changeCategory('Daily')" id="btn-Daily" class="category-btn whitespace-nowrap pb-2 font-medium transition text-gray-400">日用品</button>
-            <button onclick="changeCategory('Hotel')" id="btn-Hotel" class="category-btn whitespace-nowrap pb-2 font-medium transition text-gray-400">ホテル</button>
-            <button onclick="changeCategory('Sushi')" id="btn-Sushi" class="category-btn whitespace-nowrap pb-2 font-medium transition text-gray-400">寿司・品種</button>
-        </div>
+    <nav class="flex overflow-x-auto bg-white shadow-sm sticky top-[60px] z-30 border-b no-scrollbar">
+        <button onclick="switchTab('gourmet')" id="tab-gourmet" class="p-3 whitespace-nowrap min-w-[80px] active-tab font-bold">グルメ</button>
+        <button onclick="switchTab('shop')" id="tab-shop" class="p-3 whitespace-nowrap min-w-[80px] font-bold">スーパー</button>
+        <button onclick="switchTab('item')" id="tab-item" class="p-3 whitespace-nowrap min-w-[80px] font-bold">調味料</button>
+        <button onclick="switchTab('hotel')" id="tab-hotel" class="p-3 whitespace-nowrap min-w-[80px] font-bold">ホテル</button>
+        <button onclick="switchTab('sushi')" id="tab-sushi" class="p-3 whitespace-nowrap min-w-[80px] font-bold">寿司</button>
+    </nav>
 
-        <div class="bg-white p-6 rounded-xl shadow-sm border mb-8">
-            <div class="grid grid-cols-1 gap-4">
-                <div class="flex gap-2 items-center mb-2">
-                    <label class="text-xs font-bold text-gray-500">投稿者:</label>
-                    <select id="input-author" class="border p-1 rounded text-sm bg-gray-50">
-                        <option value="しょうや">しょうや</option>
-                        <option value="じゅんこ">じゅんこ</option>
-                        <option value="ふみひこ">ふみひこ</option>
-                    </select>
-                </div>
+    <div class="p-4 sticky top-[110px] bg-gray-100 z-20">
+        <input type="text" id="searchInput" oninput="displayData()" placeholder="🔍 名前や場所で検索..." class="w-full p-3 rounded-full border shadow-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+    </div>
 
-                <div id="preview-container" class="preview-grid"></div>
-                
-                <input type="text" id="input-name" placeholder="名称（店名など）" class="border p-2 rounded w-full">
-                
-                <div id="fields-gourmet" class="space-y-4">
-                    <input type="text" id="gourmet-address" placeholder="住所（Googleマップ連携用）" class="border p-2 rounded w-full text-sm">
-                    <input type="text" id="gourmet-hours" placeholder="営業時間 (例: 11:00-20:00)" class="border p-2 rounded w-full text-sm">
+    <main class="p-4 max-w-md mx-auto">
+        <div class="bg-white p-5 rounded-2xl shadow-sm mb-8 border border-gray-200">
+            <h2 id="form-title" class="text-lg font-bold mb-4 text-emerald-700">📝 新規登録</h2>
+            <div class="space-y-4">
+                <select id="author" class="w-full p-2.5 border rounded-lg bg-emerald-50 font-bold">
+                    <option value="しょうや">👤 しょうや</option>
+                    <option value="じゅんこ">👩 じゅんこ</option>
+                    <option value="ふみひこ">👨 ふみひこ</option>
+                </select>
+
+                <input type="text" id="name" placeholder="名称（店名・商品名）" class="w-full p-2.5 border rounded-lg">
+
+                <div id="fields-common" class="space-y-4">
+                    <input type="text" id="location" placeholder="場所・住所" class="w-full p-2.5 border rounded-lg">
+                    <textarea id="hours" placeholder="営業時間" class="w-full p-2.5 border rounded-lg h-20 text-sm"></textarea>
                 </div>
 
                 <div id="fields-hotel" class="hidden space-y-4">
-                    <input type="text" id="hotel-pref" placeholder="都道府県" class="border p-2 rounded w-full">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div><label class="text-[10px] text-gray-400">内装評価</label><input type="range" id="hotel-interior" min="1" max="5" value="3" class="w-full"></div>
-                        <div><label class="text-[10px] text-gray-400">食事評価</label><input type="range" id="hotel-meal" min="1" max="5" value="3" class="w-full"></div>
+                    <input type="text" id="hotel-pref" placeholder="都道府県" class="w-full p-2.5 border rounded-lg">
+                    <div class="grid grid-cols-2 gap-2 text-xs text-gray-500">
+                        <div>内装評価(1-5)<input type="number" id="hotel-interior" min="1" max="5" class="w-full p-2 border rounded"></div>
+                        <div>食事評価(1-5)<input type="number" id="hotel-meal" min="1" max="5" class="w-full p-2 border rounded"></div>
                     </div>
                 </div>
 
                 <div id="fields-sushi" class="hidden space-y-4">
                     <div class="flex gap-2">
-                        <input type="text" id="sushi-parent" placeholder="ネタ (例: イカ)" class="border p-2 rounded w-1/2">
-                        <input type="text" id="sushi-sub" placeholder="品種 (例: アオリイカ)" class="border p-2 rounded w-1/2">
+                        <input type="text" id="sushi-parent" placeholder="魚種(例:イカ)" class="w-full p-2.5 border rounded-lg">
+                        <input type="text" id="sushi-sub" placeholder="品種(例:アオリ)" class="w-full p-2.5 border rounded-lg">
                     </div>
                 </div>
 
-                <textarea id="input-memo" placeholder="こだわりメモ・無添加ポイント" class="border p-2 rounded h-24 w-full"></textarea>
-
-                <div class="flex flex-col gap-3">
-                    <label class="flex items-center gap-2 cursor-pointer p-3 border-2 border-dashed border-gray-300 rounded-lg justify-center hover:bg-gray-50">
-                        <span class="text-sm text-gray-600">📸 写真を複数追加</span>
-                        <input type="file" id="input-image" accept="image/*" multiple class="hidden" onchange="handleMultipleImages(this)">
-                    </label>
-                    <label class="flex items-center gap-2 cursor-pointer p-2 bg-green-50 rounded">
-                        <input type="checkbox" id="input-public" class="w-4 h-4"><span class="text-sm font-medium text-green-800">職場の仲間に公開する</span>
-                    </label>
+                <div class="p-3 border-2 border-dashed border-emerald-100 rounded-lg">
+                    <label class="text-xs font-bold text-gray-500 block mb-1">📸 写真（複数選択可）</label>
+                    <input type="file" id="photo" accept="image/*" multiple class="text-xs w-full">
                 </div>
-                <button onclick="addRecord()" class="bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition">保存して家族と同期</button>
+
+                <input type="number" id="price" placeholder="価格（任意）" class="w-full p-2.5 border rounded-lg">
+                <textarea id="memo" placeholder="メモ・こだわりポイント" class="w-full p-2.5 border rounded-lg h-24 text-sm"></textarea>
+                
+                <button onclick="saveData()" id="save-btn" class="w-full bg-emerald-500 text-white py-3.5 rounded-xl font-bold shadow-md active:scale-95 transition-all">保存する</button>
             </div>
         </div>
-    </div>
 
-    <div id="record-list" class="space-y-6"></div>
+        <div id="list-container" class="space-y-6 pb-24"></div>
 
-    <div class="mt-12 pt-8 border-t border-gray-200 text-center">
-        <button onclick="exportData()" class="text-xs bg-gray-200 px-4 py-2 rounded text-gray-600 font-bold">バックアップ保存</button>
-    </div>
-</div>
+        <div class="text-center py-4 border-t border-gray-200 mt-8">
+            <button onclick="exportData()" class="text-xs text-gray-400 font-bold underline">全データをバックアップ(JSON)</button>
+        </div>
+    </main>
 
-<script>
-    // ユーザー指定の Firebase 設定
-    const firebaseConfig = {
-        apiKey: "AIzaSyDONjnOEGSzrN3rx-Hhlcq5ew67FTPzvbI",
-        authDomain: "mutenka-app.firebaseapp.com",
-        databaseURL: "https://mutenka-app-default-rtdb.firebaseio.com",
-        projectId: "mutenka-app",
-        storageBucket: "mutenka-app.firebasestorage.app",
-        messagingSenderId: "69649285337",
-        appId: "1:69649285337:web:47d607b94f3331eeca3ec8",
-        measurementId: "G-E27WFBYTPL"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    let currentCategory = 'Gourmet';
-    let viewMode = 'my';
-    let currentImages = [];
-    let records = [];
-
-    db.ref('records').on('value', (snapshot) => {
-        const data = snapshot.val();
-        records = data ? Object.values(data).reverse() : [];
-        renderRecords();
-    });
-
-    function setViewMode(mode) {
-        viewMode = mode;
-        document.getElementById('body').classList.toggle('share-mode-bg', mode === 'share');
-        document.getElementById('input-section').classList.toggle('hidden', mode === 'share');
-        document.getElementById('main-title').innerText = mode === 'share' ? "✨ おすすめシェア名簿" : "こだわり記録帳";
-        renderRecords();
-    }
-
-    async function handleMultipleImages(input) {
-        if (!input.files) return;
-        for (let file of input.files) {
-            const data = await resizeImage(file);
-            currentImages.push(data);
-        }
-        renderPreview();
-    }
-
-    function resizeImage(file) {
-        return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const max = 400; 
-                    let w = img.width, h = img.height;
-                    if (w > h) { if (w > max) { h *= max / w; w = max; } }
-                    else { if (h > max) { w *= max / h; h = max; } }
-                    canvas.width = w; canvas.height = h;
-                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                    resolve(canvas.toDataURL('image/jpeg', 0.5));
-                };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        });
-    }
-
-    function renderPreview() {
-        document.getElementById('preview-container').innerHTML = currentImages.map(img => `<img src="${img}" class="preview-img">`).join('');
-    }
-
-    function changeCategory(cat) {
-        currentCategory = cat;
-        document.querySelectorAll('.category-btn').forEach(btn => btn.className = 'category-btn whitespace-nowrap pb-2 font-medium transition text-gray-400');
-        document.getElementById(`btn-${cat}`).className = 'category-btn whitespace-nowrap pb-2 font-medium transition active-tab';
-        
-        document.getElementById('fields-gourmet').classList.toggle('hidden', cat !== 'Gourmet');
-        document.getElementById('fields-hotel').classList.toggle('hidden', cat !== 'Hotel');
-        document.getElementById('fields-sushi').classList.toggle('hidden', cat !== 'Sushi');
-    }
-
-    function addRecord() {
-        const name = document.getElementById('input-name').value;
-        if (!name) return alert('名称を入力してください');
-        const id = Date.now();
-        const record = {
-            id, 
-            category: currentCategory, 
-            name,
-            author: document.getElementById('input-author').value,
-            memo: document.getElementById('input-memo').value,
-            address: document.getElementById('gourmet-address').value,
-            hours: document.getElementById('gourmet-hours').value,
-            images: currentImages, 
-            isPublic: document.getElementById('input-public').checked,
-            date: new Date().toLocaleDateString(),
-            prefecture: document.getElementById('hotel-pref').value,
-            interiorRating: document.getElementById('hotel-interior').value,
-            mealRating: document.getElementById('hotel-meal').value,
-            parentCategory: document.getElementById('sushi-parent').value,
-            subCategory: document.getElementById('sushi-sub').value
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDONjnOEGSzrN3rx-Hhlcq5ew67FTPzvbI",
+            authDomain: "mutenka-app.firebaseapp.com",
+            databaseURL: "https://mutenka-app-default-rtdb.firebaseio.com",
+            projectId: "mutenka-app",
+            storageBucket: "mutenka-app.firebasestorage.app",
+            messagingSenderId: "69649285337",
+            appId: "1:69649285337:web:47d607b94f3331eeca3ec8",
+            measurementId: "G-E27WFBYTPL"
         };
-        db.ref('records/' + id).set(record).then(() => {
-            resetForm();
-        }).catch(err => alert('エラー: ' + err.message));
-    }
 
-    function resetForm() {
-        ['input-name', 'input-memo', 'gourmet-address', 'gourmet-hours', 'hotel-pref', 'sushi-parent', 'sushi-sub'].forEach(id => {
-            const el = document.getElementById(id);
-            if(el) el.value = '';
-        });
-        currentImages = []; document.getElementById('preview-container').innerHTML = '';
-        document.getElementById('input-public').checked = false;
-    }
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const storage = firebase.storage();
+        let currentTab = 'gourmet';
+        let editingId = null;
 
-    function renderRecords() {
-        const list = document.getElementById('record-list');
-        const filtered = viewMode === 'share' ? records.filter(r => r.isPublic) : records;
-        list.innerHTML = `<h2 class="font-bold text-gray-700 mb-4">${viewMode === 'share' ? '職場へのおすすめ' : 'みんなのこだわり'}</h2>` + 
-        filtered.map(r => `
-            <div class="bg-white rounded-xl border shadow-sm overflow-hidden mb-6">
-                ${r.images && r.images.length ? `<div class="flex overflow-x-auto snap-x no-scrollbar">${r.images.map(img => `<img src="${img}" class="w-full h-56 object-cover snap-center flex-shrink-0">`).join('')}</div>` : ''}
-                <div class="p-4">
-                    <div class="flex justify-between items-start mb-1 text-[10px] text-gray-400">
-                        <div>${r.date} / ${getCategoryName(r.category)}</div>
-                        <div class="bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">👤 ${r.author || '不明'}</div>
-                    </div>
-                    <div class="font-bold text-lg text-green-900">${r.category === 'Sushi' && r.subCategory ? r.subCategory : r.name}</div>
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('active-tab'));
+            document.getElementById(`tab-${tab}`).classList.add('active-tab');
+            
+            // フィールドの表示切り替え
+            document.getElementById('fields-common').classList.toggle('hidden', tab === 'hotel' || tab === 'sushi');
+            document.getElementById('fields-hotel').classList.toggle('hidden', tab !== 'hotel');
+            document.getElementById('fields-sushi').classList.toggle('hidden', tab !== 'sushi');
+            
+            displayData();
+        }
+
+        async function saveData() {
+            const saveBtn = document.getElementById('save-btn');
+            const name = document.getElementById('name').value.trim();
+            if (!name) return alert('名称を入力してください');
+
+            saveBtn.disabled = true;
+            saveBtn.innerText = "送信中...";
+
+            const photoFiles = document.getElementById('photo').files;
+            let imageUrls = [];
+
+            try {
+                // 複数ファイルのアップロード
+                for (let file of photoFiles) {
+                    const storageRef = storage.ref(`images/${Date.now()}_${file.name}`);
+                    await storageRef.put(file);
+                    const url = await storageRef.getDownloadURL();
+                    imageUrls.push(url);
+                }
+
+                const itemData = {
+                    author: document.getElementById('author').value,
+                    name: name,
+                    location: document.getElementById('location').value.trim(),
+                    hours: document.getElementById('hours').value.trim(),
+                    price: document.getElementById('price').value,
+                    memo: document.getElementById('memo').value.trim(),
+                    category: currentTab,
+                    timestamp: Date.now(),
+                    // 新規追加フィールド
+                    prefecture: document.getElementById('hotel-pref').value,
+                    interiorRating: document.getElementById('hotel-interior').value,
+                    mealRating: document.getElementById('hotel-meal').value,
+                    parentFish: document.getElementById('sushi-parent').value,
+                    speciesFish: document.getElementById('sushi-sub').value
+                };
+                
+                // 画像がアップロードされていれば配列で保存（既存データとの互換性のため、1枚なら単体URL、複数なら配列または既存プロパティを考慮）
+                if (imageUrls.length > 0) itemData.imageUrls = imageUrls;
+                if (imageUrls.length === 1) itemData.imageUrl = imageUrls[0];
+
+                if (editingId) {
+                    await database.ref('items/' + editingId).update(itemData);
+                    editingId = null;
+                } else {
+                    await database.ref('items').push(itemData);
+                }
+                
+                resetForm();
+            } catch (e) {
+                alert("エラー: " + e.message);
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerText = "保存する";
+            }
+        }
+
+        function resetForm() {
+            ['name', 'location', 'hours', 'price', 'memo', 'photo', 'hotel-pref', 'hotel-interior', 'hotel-meal', 'sushi-parent', 'sushi-sub'].forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.value = '';
+            });
+            editingId = null;
+            displayData();
+        }
+
+        function displayData() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            database.ref('items').on('value', (snapshot) => {
+                const container = document.getElementById('list-container');
+                const data = snapshot.val();
+                container.innerHTML = '';
+                if (!data) return;
+
+                Object.keys(data).reverse().forEach(key => {
+                    const item = data[key];
+                    if (item.category !== currentTab) return;
+                    if (searchTerm && !item.name.toLowerCase().includes(searchTerm) && !item.location?.toLowerCase().includes(searchTerm)) return;
+
+                    const mapUrl = item.location ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + item.location)}` : '#';
+
+                    const div = document.createElement('div');
+                    div.className = 'bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden force-left mb-6';
                     
-                    ${r.address ? `<div class="text-xs text-blue-600 mt-1"><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.address)}" target="_blank">📍 ${r.address} (Map)</a></div>` : ''}
-                    ${r.hours ? `<div class="text-[10px] text-gray-500 mt-1">🕒 営業時間: ${r.hours}</div>` : ''}
-                    
-                    ${r.category === 'Hotel' ? `<div class="text-sm text-gray-600">📍 ${r.prefecture} (内装:${r.interiorRating} 食事:${r.mealRating})</div>` : ''}
-                    ${r.category === 'Sushi' ? `<div class="text-sm text-green-600 font-medium">🍣 ${r.parentCategory} @ ${r.name}</div>` : ''}
-                    <p class="text-gray-700 text-sm mt-3 pt-3 border-t border-gray-50">${r.memo}</p>
-                </div>
-            </div>
-        `).join('');
-    }
+                    // 画像表示（複数対応）
+                    let imageHtml = '';
+                    if (item.imageUrls && item.imageUrls.length > 0) {
+                        imageHtml = `<div class="flex overflow-x-auto snap-x no-scrollbar">${item.imageUrls.map(url => `<img src="${url}" class="w-full h-56 object-cover snap-center flex-shrink-0">`).join('')}</div>`;
+                    } else if (item.imageUrl) {
+                        imageHtml = `<img src="${item.imageUrl}" class="w-full h-56 object-cover">`;
+                    }
 
-    function getCategoryName(cat) {
-        return { Gourmet: 'グルメ', Seasoning: '調味料', Daily: '日用品', Hotel: 'ホテル', Sushi: '寿司' }[cat] || cat;
-    }
+                    div.innerHTML = `
+                        ${imageHtml}
+                        <div class="p-5">
+                            <div class="flex justify-between items-center mb-3">
+                                <span class="px-2 py-1 rounded bg-emerald-100 text-emerald-700 text-[10px] font-bold">👤 ${item.author}</span>
+                                <div class="space-x-4 text-sm font-medium">
+                                    <button onclick="editItem('${key}')" class="text-blue-500">編集</button>
+                                    <button onclick="deleteItem('${key}')" class="text-red-400">削除</button>
+                                </div>
+                            </div>
+                            <h3 class="font-bold text-lg text-gray-900 leading-tight">
+                                ${item.category === 'sushi' ? `${item.speciesFish} (${item.parentFish})` : item.name}
+                                ${item.location ? `<a href="${mapUrl}" target="_blank" class="ml-2 text-blue-500 text-xs underline font-normal">↗地図</a>` : ''}
+                            </h3>
+                            
+                            ${item.category === 'hotel' ? `<p class="text-xs text-gray-500 mt-1 font-bold">📍 ${item.prefecture} | 内装:${item.interiorRating} 食事:${item.mealRating}</p>` : ''}
+                            ${item.location ? `<p class="text-xs text-gray-400 mt-1">📍 ${item.location}</p>` : ''}
 
-    function exportData() {
-        const blob = new Blob([JSON.stringify(records)], { type: 'application/json' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `mutenka_backup_${new Date().toISOString().split('T')[0]}.json`;
-        a.click();
-    }
-</script>
+                            ${item.hours ? `
+                                <details class="my-4 bg-blue-50/50 rounded-xl border border-blue-100 overflow-hidden">
+                                    <summary class="p-3 text-[11px] font-bold text-blue-600 flex justify-between items-center">🕒 詳細情報・営業時間 <span>▼</span></summary>
+                                    <div class="px-3 pb-3 text-xs text-gray-700 whitespace-pre-wrap leading-relaxed border-t border-blue-100 pt-2">${item.hours}</div>
+                                </details>
+                            ` : ''}
+                            
+                            <div class="bg-emerald-50/40 p-4 rounded-xl border-l-4 border-emerald-400 text-sm text-gray-700 whitespace-pre-wrap mt-3">${item.memo}</div>
+                            ${item.price ? `<p class="text-right text-xs text-gray-400 mt-2 font-bold">参考価格: ¥${item.price}</p>` : ''}
+                        </div>
+                    `;
+                    container.appendChild(div);
+                });
+            });
+        }
+
+        function editItem(key) {
+            database.ref('items/' + key).once('value').then((snapshot) => {
+                const item = snapshot.val();
+                document.getElementById('author').value = item.author;
+                document.getElementById('name').value = item.name;
+                document.getElementById('location').value = item.location || '';
+                document.getElementById('hours').value = item.hours || '';
+                document.getElementById('price').value = item.price || '';
+                document.getElementById('memo').value = item.memo;
+                document.getElementById('hotel-pref').value = item.prefecture || '';
+                document.getElementById('hotel-interior').value = item.interiorRating || '';
+                document.getElementById('hotel-meal').value = item.mealRating || '';
+                document.getElementById('sushi-parent').value = item.parentFish || '';
+                document.getElementById('sushi-sub').value = item.speciesFish || '';
+                
+                editingId = key;
+                document.getElementById('save-btn').innerText = '変更を保存';
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
+
+        function deleteItem(key) {
+            if (confirm('削除しますか？')) database.ref('items/' + key).remove();
+        }
+
+        function exportData() {
+            database.ref('items').once('value').then(snap => {
+                const blob = new Blob([JSON.stringify(snap.val())], { type: 'application/json' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = `mutenka_full_backup_${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+            });
+        }
+
+        displayData();
+    </script>
 </body>
 </html>
