@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>こだわりガイドブック - 究極統合版</title>
+    <title>こだわりガイドブック</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
@@ -13,81 +13,99 @@
     <style>
         .active-tab { border-bottom: 4px solid #10b981; color: #10b981; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        #reader { width: 100%; border-radius: 20px; overflow: hidden; display: none; margin-bottom: 20px; }
+        .share-mode-bg { background-color: #f0fdf4; }
+        #reader { width: 100%; border-radius: 24px; overflow: hidden; display: none; }
+        .menu-btn { @apply flex flex-col items-center justify-center p-6 rounded-3xl shadow-lg transition-all active:scale-95 text-center; }
     </style>
 </head>
-<body id="body" class="bg-gray-100 text-gray-900 font-sans pb-20">
+<body id="body" class="bg-gray-100 text-gray-900 font-sans pb-10">
 
-    <header class="bg-emerald-600 text-white p-4 shadow-lg sticky top-0 z-40">
+    <header class="bg-emerald-600 text-white p-4 shadow-lg sticky top-0 z-50">
         <h1 class="text-xl font-bold text-center">こだわりガイドブック</h1>
-        <div class="flex justify-center mt-3">
+        <div id="mode-switcher" class="flex justify-center mt-3 hidden">
             <div class="inline-flex bg-emerald-700/50 rounded-lg p-1">
-                <button onclick="setViewMode('my')" id="mode-my" class="px-4 py-1 rounded-md text-[10px] font-bold bg-white text-emerald-700 shadow-sm">自分・家族用</button>
+                <button onclick="setViewMode('my')" id="mode-my" class="px-4 py-1 rounded-md text-[10px] font-bold bg-white text-emerald-700">自分・家族用</button>
                 <button onclick="setViewMode('share')" id="mode-share" class="px-4 py-1 rounded-md text-[10px] font-bold text-white/70">職場共有用</button>
             </div>
         </div>
     </header>
 
     <main class="p-4 max-w-md mx-auto">
-        <div id="start-menu" class="grid grid-cols-1 gap-4 mb-8">
-            <button onclick="startSmartInput()" class="bg-blue-600 text-white p-8 rounded-3xl shadow-xl active:scale-95 transition-all text-center">
-                <div class="text-3xl mb-2">📸</div>
-                <div class="font-bold text-lg">カメラでとりあえず情報入力</div>
-                <div class="text-[10px] opacity-80">バーコード読み取り・自動名寄せ</div>
+        <div id="section-home" class="grid grid-cols-1 gap-6 pt-10">
+            <button onclick="startCameraMode()" class="menu-btn bg-blue-600 text-white">
+                <span class="text-4xl mb-2">📸</span>
+                <span class="font-bold text-lg">カメラでスマート入力</span>
+                <span class="text-[10px] opacity-80">バーコード・AI成分解析</span>
             </button>
-            <button onclick="showForm()" class="bg-white text-emerald-700 p-8 rounded-3xl shadow-md active:scale-95 transition-all text-center border-2 border-emerald-100">
-                <div class="text-3xl mb-2">📝</div>
-                <div class="font-bold text-lg">現在の入力ページ</div>
-                <div class="text-[10px] text-gray-400">じっくり詳しく入力する</div>
+            <button onclick="startManualMode()" class="menu-btn bg-white text-emerald-700 border-2 border-emerald-100">
+                <span class="text-4xl mb-2">📝</span>
+                <span class="font-bold text-lg">じっくり詳細入力</span>
+                <span class="text-[10px] text-gray-400">営業時間や地図情報を登録</span>
+            </button>
+            <button onclick="startBrowseMode()" class="menu-btn bg-emerald-500 text-white">
+                <span class="text-4xl mb-2">👀</span>
+                <span class="font-bold text-lg">みんなの記録を見る</span>
+                <span class="text-[10px] opacity-80">過去のデータを確認・編集</span>
             </button>
         </div>
 
-        <div id="reader" class="shadow-2xl"></div>
+        <div id="section-camera" class="hidden">
+            <div id="reader" class="mb-4 shadow-2xl"></div>
+            <button onclick="goHome()" class="w-full py-3 bg-gray-400 text-white rounded-xl font-bold mb-4">× キャンセル</button>
+        </div>
 
-        <div id="input-section" class="hidden bg-white p-5 rounded-3xl shadow-sm mb-8 border border-gray-200">
-            <div class="flex justify-between items-center mb-4">
-                <h2 id="form-type-label" class="text-lg font-bold text-emerald-700 font-bold">📝 入力フォーム</h2>
-                <button onclick="hideForm()" class="text-gray-400 text-xs font-bold">× 戻る</button>
+        <div id="section-form" class="hidden bg-white p-6 rounded-3xl shadow-sm border border-gray-200">
+            <div class="flex justify-between items-center mb-6">
+                <h2 id="form-title" class="text-lg font-bold text-emerald-700 font-bold">📝 データ入力</h2>
+                <button onclick="goHome()" class="text-gray-400 font-bold">× 閉じる</button>
             </div>
             
             <div class="space-y-4">
-                <select id="author" class="w-full p-2.5 border rounded-xl bg-emerald-50 font-bold text-sm">
+                <select id="author" class="w-full p-3 border rounded-xl bg-emerald-50 font-bold text-sm">
                     <option value="しょうや">👤 しょうや</option>
                     <option value="じゅんこ">👩 じゅんこ</option>
                     <option value="ふみひこ">👨 ふみひこ</option>
                 </select>
 
-                <input type="text" id="name" placeholder="名称（店名・商品名）" class="w-full p-2.5 border rounded-xl text-sm font-bold">
-                <input type="hidden" id="barcode-val">
-
-                <div id="fields-common" class="space-y-4">
-                    <input type="text" id="location" placeholder="場所・住所" class="w-full p-2.5 border rounded-xl text-sm">
+                <div class="space-y-1">
                     <div class="flex gap-2">
-                        <input type="url" id="itemUrl" placeholder="🔗 通販URL" class="w-full p-2.5 border border-blue-100 rounded-xl text-sm bg-blue-50/30">
+                        <input type="text" id="name" placeholder="名称（店名・商品名）" class="w-full p-3 border rounded-xl font-bold">
+                        <button id="barcode-search-btn" onclick="searchJAN()" class="hidden bg-orange-500 text-white px-3 rounded-xl text-[10px] font-bold whitespace-nowrap">🔍検索</button>
                     </div>
-                    <textarea id="hours" placeholder="営業時間・詳細" class="w-full p-2.5 border rounded-xl h-20 text-sm"></textarea>
+                    <p id="barcode-info" class="text-[8px] text-gray-400 px-1 hidden">バーコード読み取り済み。上のボタンで商品名を検索できます。</p>
                 </div>
 
-                <div class="p-3 border-2 border-dashed border-emerald-100 rounded-xl bg-gray-50/50">
-                    <label class="text-[10px] font-bold text-gray-500 block mb-2">📸 写真（成分表からAI解析）</label>
-                    <input type="file" id="photo" accept="image/*" multiple class="text-[10px] w-full mb-2" onchange="processOCR(this)">
-                    <div id="ocr-status" class="text-[9px] text-blue-600 font-bold"></div>
-                </div>
-
-                <textarea id="memo" placeholder="こだわりポイント" class="w-full p-2.5 border rounded-xl h-24 text-sm"></textarea>
+                <input type="hidden" id="barcode-val">
+                <input type="text" id="location" placeholder="場所・住所" class="w-full p-3 border rounded-xl text-sm">
+                <input type="url" id="itemUrl" placeholder="🔗 通販URL" class="w-full p-3 border border-blue-100 rounded-xl text-sm bg-blue-50/20">
+                <textarea id="hours" placeholder="営業時間・詳細" class="w-full p-3 border rounded-xl h-20 text-sm"></textarea>
                 
-                <button onclick="saveData()" id="save-btn" class="w-full bg-emerald-500 text-white py-4 rounded-2xl font-bold shadow-lg">保存してクラウド同期</button>
+                <div class="p-4 border-2 border-dashed border-emerald-100 rounded-xl">
+                    <label class="text-[10px] font-bold text-gray-500 block mb-2">📸 写真（成分表を撮るとAIが解析）</label>
+                    <input type="file" id="photo" accept="image/*" multiple class="text-xs w-full" onchange="processOCR(this)">
+                    <div id="ocr-status" class="text-[9px] text-blue-600 font-bold mt-2"></div>
+                </div>
+
+                <textarea id="memo" placeholder="メモ・こだわり成分" class="w-full p-3 border rounded-xl h-24 text-sm"></textarea>
+                <button onclick="saveData()" id="save-btn" class="w-full bg-emerald-500 text-white py-4 rounded-2xl font-bold shadow-lg">保存して同期</button>
             </div>
         </div>
 
-        <nav id="category-nav" class="flex overflow-x-auto gap-2 mb-4 no-scrollbar">
-            <button onclick="switchTab('gourmet')" id="tab-gourmet" class="px-4 py-2 whitespace-nowrap active-tab font-bold text-sm">グルメ</button>
-            <button onclick="switchTab('item')" id="tab-item" class="px-4 py-2 whitespace-nowrap font-bold text-sm text-gray-400">調味料・日用品</button>
-            <button onclick="switchTab('hotel')" id="tab-hotel" class="px-4 py-2 whitespace-nowrap font-bold text-sm text-gray-400">ホテル</button>
-            <button onclick="switchTab('sushi')" id="tab-sushi" class="px-4 py-2 whitespace-nowrap font-bold text-sm text-gray-400">寿司</button>
-        </nav>
+        <div id="section-browse" class="hidden">
+            <div class="flex justify-between items-center mb-4">
+                <button onclick="goHome()" class="text-emerald-700 font-bold text-sm">← メニューへ</button>
+                <input type="text" id="searchInput" oninput="displayData()" placeholder="🔍 検索..." class="p-2 border rounded-full text-xs w-2/3 outline-none bg-white">
+            </div>
 
-        <div id="list-container" class="space-y-6"></div>
+            <nav class="flex overflow-x-auto gap-2 mb-6 no-scrollbar border-b pb-2">
+                <button onclick="switchTab('gourmet')" id="tab-gourmet" class="px-3 py-1 whitespace-nowrap active-tab font-bold text-sm text-gray-400">グルメ</button>
+                <button onclick="switchTab('item')" id="tab-item" class="px-3 py-1 whitespace-nowrap font-bold text-sm text-gray-400">調味料・日用品</button>
+                <button onclick="switchTab('hotel')" id="tab-hotel" class="px-3 py-1 whitespace-nowrap font-bold text-sm text-gray-400">ホテル</button>
+                <button onclick="switchTab('sushi')" id="tab-sushi" class="px-3 py-1 whitespace-nowrap font-bold text-sm text-gray-400">寿司</button>
+            </nav>
+
+            <div id="list-container" class="space-y-6 pb-20"></div>
+        </div>
     </main>
 
     <script>
@@ -104,95 +122,121 @@
         const database = firebase.database(), storage = firebase.storage();
         let currentTab = 'gourmet', viewMode = 'my', editingId = null;
 
-        function showForm() { document.getElementById('start-menu').classList.add('hidden'); document.getElementById('input-section').classList.remove('hidden'); }
-        function hideForm() { document.getElementById('start-menu').classList.remove('hidden'); document.getElementById('input-section').classList.add('hidden'); resetForm(); }
+        function goHome() {
+            ['section-home', 'section-camera', 'section-form', 'section-browse', 'mode-switcher'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById('section-home').classList.remove('hidden');
+            resetForm();
+        }
 
-        function startSmartInput() {
-            const readerEl = document.getElementById('reader');
-            readerEl.style.display = 'block';
+        function startCameraMode() {
+            document.getElementById('section-home').classList.add('hidden');
+            document.getElementById('section-camera').classList.remove('hidden');
             const html5QrCode = new Html5Qrcode("reader");
+            document.getElementById('reader').style.display = 'block';
             html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (decodedText) => {
                 html5QrCode.stop();
-                readerEl.style.display = 'none';
+                document.getElementById('reader').style.display = 'none';
                 checkExistingProduct(decodedText);
+            }).catch(err => {
+                alert("カメラエラー: " + err);
+                goHome();
             });
+        }
+
+        function searchJAN() {
+            const jan = document.getElementById('barcode-val').value;
+            if (jan) {
+                window.open(`https://www.google.com/search?q=${jan}`, '_blank');
+            }
         }
 
         async function checkExistingProduct(barcode) {
             const snapshot = await database.ref('items').orderByChild('barcode').equalTo(barcode).once('value');
             const data = snapshot.val();
-            showForm();
+            startManualMode();
             document.getElementById('barcode-val').value = barcode;
+            document.getElementById('barcode-search-btn').classList.remove('hidden');
+            document.getElementById('barcode-info').classList.remove('hidden');
+
             if (data) {
                 editingId = Object.keys(data)[0];
                 const item = data[editingId];
                 document.getElementById('name').value = item.name;
                 document.getElementById('memo').value = item.memo;
-                document.getElementById('save-btn').innerText = "上書き保存する";
-                alert("同じバーコードのデータが見つかりました。上書き更新します。");
+                document.getElementById('save-btn').innerText = "既存データを更新する";
+                alert("この商品は登録済みです。内容を更新します。");
             } else {
                 document.getElementById('name').value = "JAN:" + barcode;
                 document.getElementById('save-btn').innerText = "新規保存する";
             }
         }
 
+        function startManualMode() {
+            document.getElementById('section-home').classList.add('hidden');
+            document.getElementById('section-form').classList.remove('hidden');
+        }
+
+        function startBrowseMode() {
+            document.getElementById('section-home').classList.add('hidden');
+            document.getElementById('section-browse').classList.remove('hidden');
+            document.getElementById('mode-switcher').classList.remove('hidden');
+            displayData();
+        }
+
         async function processOCR(input) {
             if (!input.files[0]) return;
             const status = document.getElementById('ocr-status');
             status.innerText = "⏳ AI解析中...";
-            const result = await Tesseract.recognize(input.files[0], 'jpn');
-            document.getElementById('memo').value += "\n【AI解析】" + result.data.text;
-            status.innerText = "✅ 解析完了";
+            try {
+                const result = await Tesseract.recognize(input.files[0], 'jpn');
+                document.getElementById('memo').value += "\n【AI解析】" + result.data.text;
+                status.innerText = "✅ 解析完了";
+            } catch (e) {
+                status.innerText = "❌ 解析エラー";
+            }
         }
 
         async function saveData() {
-            const saveBtn = document.getElementById('save-btn');
             const name = document.getElementById('name').value;
-            if (!name) return alert('名前を入力してください');
+            if (!name) return alert('名称を入力してください');
+            
+            const saveBtn = document.getElementById('save-btn');
             saveBtn.disabled = true;
-            saveBtn.innerText = "保存中...";
+            saveBtn.innerText = "同期中...";
 
             const photoFiles = document.getElementById('photo').files;
             let imageUrls = [];
-            for (let file of photoFiles) {
-                const storageRef = storage.ref(`images/${Date.now()}_${file.name}`);
-                await storageRef.put(file);
-                imageUrls.push(await storageRef.getDownloadURL());
+            try {
+                for (let file of photoFiles) {
+                    const storageRef = storage.ref(`images/${Date.now()}_${file.name}`);
+                    await storageRef.put(file);
+                    imageUrls.push(await storageRef.getDownloadURL());
+                }
+
+                const itemData = {
+                    author: document.getElementById('author').value,
+                    name: name,
+                    barcode: document.getElementById('barcode-val').value || "",
+                    location: document.getElementById('location').value,
+                    itemUrl: document.getElementById('itemUrl').value,
+                    hours: document.getElementById('hours').value,
+                    memo: document.getElementById('memo').value,
+                    category: currentTab,
+                    timestamp: Date.now(),
+                    imageUrls: imageUrls
+                };
+
+                const ref = editingId ? database.ref('items/' + editingId) : database.ref('items').push();
+                await ref.set(itemData);
+                alert("保存完了！メニューに戻ります。");
+                goHome();
+            } catch (e) {
+                alert("保存エラー: " + e.message);
+            } finally {
+                saveBtn.disabled = false;
             }
-
-            const itemData = {
-                author: document.getElementById('author').value,
-                name: name,
-                barcode: document.getElementById('barcode-val').value || "",
-                location: document.getElementById('location').value,
-                itemUrl: document.getElementById('itemUrl').value,
-                hours: document.getElementById('hours').value,
-                memo: document.getElementById('memo').value,
-                category: currentTab,
-                timestamp: Date.now(),
-                imageUrls: imageUrls
-            };
-
-            const ref = editingId ? database.ref('items/' + editingId) : database.ref('items').push();
-            await ref.set(itemData);
-            hideForm();
-        }
-
-        function resetForm() {
-            ['name', 'location', 'itemUrl', 'memo', 'photo', 'barcode-val'].forEach(id => {
-                const el = document.getElementById(id); if(el) el.value = '';
-            });
-            editingId = null;
-            document.getElementById('save-btn').innerText = "保存して同期";
-        }
-
-        function switchTab(tab) {
-            currentTab = tab;
-            document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('active-tab', 'text-gray-900'));
-            document.querySelectorAll('nav button').forEach(btn => btn.classList.add('text-gray-400'));
-            document.getElementById(`tab-${tab}`).classList.add('active-tab');
-            document.getElementById(`tab-${tab}`).classList.remove('text-gray-400');
-            displayData();
         }
 
         function displayData() {
@@ -204,22 +248,70 @@
                 Object.keys(data).reverse().forEach(key => {
                     const item = data[key];
                     if (item.category !== currentTab) return;
+                    const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + item.location)}`;
                     const div = document.createElement('div');
-                    div.className = 'bg-white p-5 rounded-3xl shadow-sm border mb-4 text-left';
+                    div.className = 'bg-white rounded-3xl shadow-sm border p-5 relative text-left mb-6';
                     div.innerHTML = `
-                        ${item.imageUrls ? `<img src="${item.imageUrls[0]}" class="w-full h-40 object-cover rounded-2xl mb-3">` : ''}
-                        <div class="flex justify-between text-[9px] text-emerald-600 font-bold mb-1">
+                        ${item.imageUrls ? `<img src="${item.imageUrls[0]}" class="w-full h-40 object-cover rounded-2xl mb-4">` : ''}
+                        <div class="flex justify-between text-[9px] text-emerald-600 font-bold mb-2">
                             <span>👤 ${item.author}</span>
-                            <span>${new Date(item.timestamp).toLocaleDateString()}</span>
+                            <div class="space-x-3">
+                                <button onclick="editItem('${key}')" class="text-blue-500">編集</button>
+                                <button onclick="deleteItem('${key}')" class="text-red-400 font-bold">削除</button>
+                            </div>
                         </div>
-                        <h3 class="font-bold text-lg">${item.name}</h3>
-                        <p class="text-xs text-gray-500 mt-2 whitespace-pre-wrap">${item.memo}</p>
+                        <h3 class="font-bold text-lg leading-tight">${item.name}</h3>
+                        <div class="flex gap-4 mt-2">
+                            ${item.location ? `<a href="${mapUrl}" target="_blank" class="text-blue-600 text-[10px] font-bold underline">📍 地図を見る</a>` : ''}
+                            ${item.itemUrl ? `<a href="${item.itemUrl}" target="_blank" class="text-orange-600 text-[10px] font-bold underline">🛒 通販で購入</a>` : ''}
+                        </div>
+                        ${item.hours ? `<details class="mt-3 bg-blue-50/50 rounded-xl overflow-hidden border border-blue-100 font-bold"><summary class="p-2 text-[10px] text-blue-600 flex justify-between">🕒 営業時間・詳細 <span>▼</span></summary><div class="p-2 text-[10px] text-gray-600 border-t border-blue-100 whitespace-pre-wrap">${item.hours}</div></details>` : ''}
+                        <div class="bg-emerald-50/50 p-4 rounded-xl border-l-4 border-emerald-400 text-xs mt-3 whitespace-pre-wrap">${item.memo}</div>
                     `;
                     container.appendChild(div);
                 });
             });
         }
-        displayData();
+
+        function editItem(key) {
+            database.ref('items/' + key).once('value').then(snap => {
+                const item = snap.val();
+                editingId = key;
+                startManualMode();
+                document.getElementById('name').value = item.name;
+                document.getElementById('location').value = item.location || '';
+                document.getElementById('itemUrl').value = item.itemUrl || '';
+                document.getElementById('hours').value = item.hours || '';
+                document.getElementById('memo').value = item.memo;
+                document.getElementById('barcode-val').value = item.barcode || '';
+                document.getElementById('save-btn').innerText = "データを更新する";
+            });
+        }
+
+        function deleteItem(key) { if (confirm('削除しますか？')) database.ref('items/' + key).remove(); }
+        
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('nav button').forEach(btn => btn.className = 'px-3 py-1 whitespace-nowrap font-bold text-sm text-gray-400');
+            document.getElementById(`tab-${tab}`).className = 'px-3 py-1 whitespace-nowrap active-tab font-bold text-sm';
+            displayData();
+        }
+
+        function setViewMode(mode) {
+            viewMode = mode;
+            document.getElementById('body').classList.toggle('share-mode-bg', mode === 'share');
+            displayData();
+        }
+
+        function resetForm() {
+            ['name', 'location', 'itemUrl', 'hours', 'memo', 'photo', 'barcode-val'].forEach(id => {
+                const el = document.getElementById(id); if(el) el.value = '';
+            });
+            document.getElementById('barcode-search-btn').classList.add('hidden');
+            document.getElementById('barcode-info').classList.add('hidden');
+            editingId = null;
+            document.getElementById('save-btn').innerText = "保存して同期";
+        }
     </script>
 </body>
 </html>
