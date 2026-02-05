@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>無添加ライフ管理 - フロー最適化版</title>
+    <title>こだわりガイドブック - 究極統合版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
@@ -13,14 +13,13 @@
     <style>
         .active-tab { border-bottom: 4px solid #10b981; color: #10b981; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .share-mode-bg { background-color: #f0fdf4; }
         #reader { width: 100%; border-radius: 20px; overflow: hidden; display: none; margin-bottom: 20px; }
     </style>
 </head>
-<body id="body" class="bg-gray-100 text-gray-900 font-sans transition-colors duration-300">
+<body id="body" class="bg-gray-100 text-gray-900 font-sans pb-20">
 
     <header class="bg-emerald-600 text-white p-4 shadow-lg sticky top-0 z-40">
-        <h1 id="main-title" class="text-xl font-bold text-center">家族の無添加ライフ管理</h1>
+        <h1 class="text-xl font-bold text-center">家族の無添加ライフ管理</h1>
         <div class="flex justify-center mt-3">
             <div class="inline-flex bg-emerald-700/50 rounded-lg p-1">
                 <button onclick="setViewMode('my')" id="mode-my" class="px-4 py-1 rounded-md text-[10px] font-bold bg-white text-emerald-700 shadow-sm">自分・家族用</button>
@@ -34,12 +33,12 @@
             <button onclick="startSmartInput()" class="bg-blue-600 text-white p-8 rounded-3xl shadow-xl active:scale-95 transition-all text-center">
                 <div class="text-3xl mb-2">📸</div>
                 <div class="font-bold text-lg">カメラでとりあえず情報入力</div>
-                <div class="text-[10px] opacity-80">バーコード・写真解析</div>
+                <div class="text-[10px] opacity-80">バーコード読み取り・自動名寄せ</div>
             </button>
             <button onclick="showForm()" class="bg-white text-emerald-700 p-8 rounded-3xl shadow-md active:scale-95 transition-all text-center border-2 border-emerald-100">
                 <div class="text-3xl mb-2">📝</div>
                 <div class="font-bold text-lg">現在の入力ページ</div>
-                <div class="text-[10px] text-gray-400">手動で詳しく入力</div>
+                <div class="text-[10px] text-gray-400">じっくり詳しく入力する</div>
             </button>
         </div>
 
@@ -47,8 +46,8 @@
 
         <div id="input-section" class="hidden bg-white p-5 rounded-3xl shadow-sm mb-8 border border-gray-200">
             <div class="flex justify-between items-center mb-4">
-                <h2 id="form-type-label" class="text-lg font-bold text-emerald-700">📝 新規登録</h2>
-                <button onclick="hideForm()" class="text-gray-400 text-xs font-bold">× 閉じる</button>
+                <h2 id="form-type-label" class="text-lg font-bold text-emerald-700 font-bold">📝 入力フォーム</h2>
+                <button onclick="hideForm()" class="text-gray-400 text-xs font-bold">× 戻る</button>
             </div>
             
             <div class="space-y-4">
@@ -61,11 +60,12 @@
                 <input type="text" id="name" placeholder="名称（店名・商品名）" class="w-full p-2.5 border rounded-xl text-sm font-bold">
                 <input type="hidden" id="barcode-val">
 
-                <div id="fields-item" class="space-y-4">
+                <div id="fields-common" class="space-y-4">
                     <input type="text" id="location" placeholder="場所・住所" class="w-full p-2.5 border rounded-xl text-sm">
                     <div class="flex gap-2">
                         <input type="url" id="itemUrl" placeholder="🔗 通販URL" class="w-full p-2.5 border border-blue-100 rounded-xl text-sm bg-blue-50/30">
                     </div>
+                    <textarea id="hours" placeholder="営業時間・詳細" class="w-full p-2.5 border rounded-xl h-20 text-sm"></textarea>
                 </div>
 
                 <div class="p-3 border-2 border-dashed border-emerald-100 rounded-xl bg-gray-50/50">
@@ -74,24 +74,23 @@
                     <div id="ocr-status" class="text-[9px] text-blue-600 font-bold"></div>
                 </div>
 
-                <textarea id="memo" placeholder="メモ・こだわりポイント" class="w-full p-2.5 border rounded-xl h-24 text-sm"></textarea>
+                <textarea id="memo" placeholder="こだわりポイント" class="w-full p-2.5 border rounded-xl h-24 text-sm"></textarea>
                 
-                <button onclick="saveData()" id="save-btn" class="w-full bg-emerald-500 text-white py-4 rounded-2xl font-bold shadow-lg shadow-emerald-100">保存して同期</button>
+                <button onclick="saveData()" id="save-btn" class="w-full bg-emerald-500 text-white py-4 rounded-2xl font-bold shadow-lg">保存してクラウド同期</button>
             </div>
         </div>
 
         <nav id="category-nav" class="flex overflow-x-auto gap-2 mb-4 no-scrollbar">
             <button onclick="switchTab('gourmet')" id="tab-gourmet" class="px-4 py-2 whitespace-nowrap active-tab font-bold text-sm">グルメ</button>
-            <button onclick="switchTab('item')" id="tab-item" class="px-4 py-2 whitespace-nowrap font-bold text-sm text-gray-400">日用品・調味料</button>
+            <button onclick="switchTab('item')" id="tab-item" class="px-4 py-2 whitespace-nowrap font-bold text-sm text-gray-400">調味料・日用品</button>
             <button onclick="switchTab('hotel')" id="tab-hotel" class="px-4 py-2 whitespace-nowrap font-bold text-sm text-gray-400">ホテル</button>
             <button onclick="switchTab('sushi')" id="tab-sushi" class="px-4 py-2 whitespace-nowrap font-bold text-sm text-gray-400">寿司</button>
         </nav>
 
-        <div id="list-container" class="space-y-6 pb-24"></div>
+        <div id="list-container" class="space-y-6"></div>
     </main>
 
     <script>
-        // Firebase Config (ご提示のものを利用)
         const firebaseConfig = {
             apiKey: "AIzaSyDONjnOEGSzrN3rx-Hhlcq5ew67FTPzvbI",
             authDomain: "mutenka-app.firebaseapp.com",
@@ -105,22 +104,13 @@
         const database = firebase.database(), storage = firebase.storage();
         let currentTab = 'gourmet', viewMode = 'my', editingId = null;
 
-        function showForm() {
-            document.getElementById('start-menu').classList.add('hidden');
-            document.getElementById('input-section').classList.remove('hidden');
-        }
-        function hideForm() {
-            document.getElementById('start-menu').classList.remove('hidden');
-            document.getElementById('input-section').classList.add('hidden');
-            resetForm();
-        }
+        function showForm() { document.getElementById('start-menu').classList.add('hidden'); document.getElementById('input-section').classList.remove('hidden'); }
+        function hideForm() { document.getElementById('start-menu').classList.remove('hidden'); document.getElementById('input-section').classList.add('hidden'); resetForm(); }
 
-        // --- スマート入力: バーコードスキャン & 上書きチェック ---
         function startSmartInput() {
             const readerEl = document.getElementById('reader');
             readerEl.style.display = 'block';
             const html5QrCode = new Html5Qrcode("reader");
-            
             html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (decodedText) => {
                 html5QrCode.stop();
                 readerEl.style.display = 'none';
@@ -131,40 +121,44 @@
         async function checkExistingProduct(barcode) {
             const snapshot = await database.ref('items').orderByChild('barcode').equalTo(barcode).once('value');
             const data = snapshot.val();
-            
             showForm();
             document.getElementById('barcode-val').value = barcode;
-            
             if (data) {
-                const key = Object.keys(data)[0];
-                const item = data[key];
-                editingId = key;
+                editingId = Object.keys(data)[0];
+                const item = data[editingId];
                 document.getElementById('name').value = item.name;
                 document.getElementById('memo').value = item.memo;
-                document.getElementById('form-type-label').innerText = "🔄 既存データを更新";
                 document.getElementById('save-btn').innerText = "上書き保存する";
-                alert("登録済み商品が見つかりました。内容を更新できます。");
+                alert("同じバーコードのデータが見つかりました。上書き更新します。");
             } else {
                 document.getElementById('name').value = "JAN:" + barcode;
-                document.getElementById('form-type-label').innerText = "✨ 新規登録 (スキャン)";
                 document.getElementById('save-btn').innerText = "新規保存する";
             }
         }
 
-        // --- OCR解析 ---
         async function processOCR(input) {
             if (!input.files[0]) return;
             const status = document.getElementById('ocr-status');
             status.innerText = "⏳ AI解析中...";
             const result = await Tesseract.recognize(input.files[0], 'jpn');
-            document.getElementById('memo').value += "\n【解析】" + result.data.text;
+            document.getElementById('memo').value += "\n【AI解析】" + result.data.text;
             status.innerText = "✅ 解析完了";
         }
 
-        // --- 保存ロジック ---
         async function saveData() {
+            const saveBtn = document.getElementById('save-btn');
             const name = document.getElementById('name').value;
             if (!name) return alert('名前を入力してください');
+            saveBtn.disabled = true;
+            saveBtn.innerText = "保存中...";
+
+            const photoFiles = document.getElementById('photo').files;
+            let imageUrls = [];
+            for (let file of photoFiles) {
+                const storageRef = storage.ref(`images/${Date.now()}_${file.name}`);
+                await storageRef.put(file);
+                imageUrls.push(await storageRef.getDownloadURL());
+            }
 
             const itemData = {
                 author: document.getElementById('author').value,
@@ -172,18 +166,15 @@
                 barcode: document.getElementById('barcode-val').value || "",
                 location: document.getElementById('location').value,
                 itemUrl: document.getElementById('itemUrl').value,
+                hours: document.getElementById('hours').value,
                 memo: document.getElementById('memo').value,
                 category: currentTab,
-                timestamp: Date.now()
+                timestamp: Date.now(),
+                imageUrls: imageUrls
             };
 
-            if (editingId) {
-                await database.ref('items/' + editingId).update(itemData);
-                alert("上書き保存しました。");
-            } else {
-                await database.ref('items').push(itemData);
-                alert("新規保存しました。");
-            }
+            const ref = editingId ? database.ref('items/' + editingId) : database.ref('items').push();
+            await ref.set(itemData);
             hideForm();
         }
 
@@ -192,7 +183,6 @@
                 const el = document.getElementById(id); if(el) el.value = '';
             });
             editingId = null;
-            document.getElementById('form-type-label').innerText = "📝 新規登録";
             document.getElementById('save-btn').innerText = "保存して同期";
         }
 
@@ -215,8 +205,16 @@
                     const item = data[key];
                     if (item.category !== currentTab) return;
                     const div = document.createElement('div');
-                    div.className = 'bg-white p-5 rounded-3xl shadow-sm border mb-4';
-                    div.innerHTML = `<h3 class="font-bold text-lg">${item.name}</h3><p class="text-xs text-gray-500 mt-2">${item.memo}</p>`;
+                    div.className = 'bg-white p-5 rounded-3xl shadow-sm border mb-4 text-left';
+                    div.innerHTML = `
+                        ${item.imageUrls ? `<img src="${item.imageUrls[0]}" class="w-full h-40 object-cover rounded-2xl mb-3">` : ''}
+                        <div class="flex justify-between text-[9px] text-emerald-600 font-bold mb-1">
+                            <span>👤 ${item.author}</span>
+                            <span>${new Date(item.timestamp).toLocaleDateString()}</span>
+                        </div>
+                        <h3 class="font-bold text-lg">${item.name}</h3>
+                        <p class="text-xs text-gray-500 mt-2 whitespace-pre-wrap">${item.memo}</p>
+                    `;
                     container.appendChild(div);
                 });
             });
