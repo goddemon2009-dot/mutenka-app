@@ -89,7 +89,7 @@
                 <div id="fields-hotel" class="hidden space-y-3 bg-indigo-50 p-3 rounded-xl border border-indigo-100">
                     <label class="text-[10px] font-bold text-indigo-600 ml-1">🏨 ホテルの思い出メモ</label>
                     <input type="text" id="hotel-interior" placeholder="お部屋・内装の感想" class="w-full p-2 text-sm border rounded-lg bg-white">
-                    <input type="text" id="hotel-meal" placeholder="食事の感想（無添加対応など）" class="w-full p-2 text-sm border rounded-lg bg-white">
+                    <input type="text" id="hotel-meal" placeholder="食事の感想" class="w-full p-2 text-sm border rounded-lg bg-white">
                     <input type="text" id="hotel-amenity" placeholder="アメニティの成分" class="w-full p-2 text-sm border rounded-lg bg-white">
                 </div>
 
@@ -111,7 +111,7 @@
                     <input type="range" id="rating-val" min="1" max="5" value="3" class="w-full accent-yellow-500">
                 </div>
 
-                <div id="field-url"><input type="url" id="itemUrl" placeholder="🔗 関連URL・予約サイト" class="w-full p-3 border border-blue-100 rounded-xl text-sm bg-blue-50/20"></div>
+                <div id="field-url"><input type="url" id="itemUrl" placeholder="🔗 関連URL" class="w-full p-3 border border-blue-100 rounded-xl text-sm bg-blue-50/20"></div>
                 
                 <textarea id="hours" placeholder="詳細情報" class="w-full p-3 border rounded-xl h-20 text-sm"></textarea>
                 
@@ -168,10 +168,37 @@
             if (params.get('view') === 'share') { setViewMode('share'); startBrowseMode(); }
         };
 
-        function goHome() { ['section-home', 'section-form', 'section-browse', 'section-camera', 'mode-switcher'].forEach(id => document.getElementById(id).classList.add('hidden')); document.getElementById('section-home').classList.remove('hidden'); resetForm(); }
-        function goBackFromForm() { if (editingId) startBrowseMode(); else goHome(); }
-        function startManualMode() { document.getElementById('section-home').classList.add('hidden'); document.getElementById('section-form').classList.remove('hidden'); toggleCategoryFields(document.getElementById('input-category').value); }
-        function startBrowseMode() { document.getElementById('section-home').classList.add('hidden'); document.getElementById('section-browse').classList.remove('hidden'); document.getElementById('mode-switcher').classList.remove('hidden'); displayData(); }
+        // 画面遷移管理
+        function goHome() { 
+            ['section-home', 'section-form', 'section-browse', 'section-camera', 'mode-switcher'].forEach(id => document.getElementById(id).classList.add('hidden')); 
+            document.getElementById('section-home').classList.remove('hidden'); 
+            resetForm(); 
+        }
+
+        function goBackFromForm() { 
+            if (editingId) {
+                startBrowseMode(); // 編集時は一覧へ戻る
+            } else {
+                goHome(); // 新規時はホームへ戻る
+            }
+            resetForm(); // 必ずリセット
+        }
+
+        function startManualMode() { 
+            if (!editingId) resetForm(); // 新規作成時のみリセット
+            document.getElementById('section-home').classList.add('hidden'); 
+            document.getElementById('section-browse').classList.add('hidden');
+            document.getElementById('section-form').classList.remove('hidden'); 
+            toggleCategoryFields(document.getElementById('input-category').value); 
+        }
+
+        function startBrowseMode() { 
+            document.getElementById('section-home').classList.add('hidden'); 
+            document.getElementById('section-form').classList.add('hidden'); 
+            document.getElementById('section-browse').classList.remove('hidden'); 
+            document.getElementById('mode-switcher').classList.remove('hidden'); 
+            displayData(); 
+        }
 
         function toggleCategoryFields(cat) {
             document.getElementById('fields-sushi').classList.toggle('hidden', cat !== 'sushi');
@@ -181,12 +208,10 @@
             document.getElementById('field-location').classList.toggle('hidden', cat === 'item');
             document.getElementById('field-url').classList.toggle('hidden', cat === 'item');
             document.getElementById('jan-search-btn').classList.toggle('hidden', !document.getElementById('barcode-val').value);
-            
             const h = document.getElementById('hours');
             if(cat === 'item') h.placeholder = "🧪 原材料・添加物リスト";
             else if(cat === 'hotel') h.placeholder = "🏨 周辺環境・アクセス詳細";
             else h.placeholder = "🕒 営業時間・メニュー詳細";
-
             if(cat === 'item' && document.getElementById('price-entry-list').children.length === 0) addPriceField();
         }
 
@@ -199,25 +224,29 @@
             container.appendChild(div);
         }
 
+        // 保存処理
         async function saveData() {
             const name = document.getElementById('name').value.trim();
             if (!name) return alert('名称を入力してください');
+            
             const saveBtn = document.getElementById('save-btn');
-            saveBtn.disabled = true; saveBtn.innerText = "同期中...";
+            saveBtn.disabled = true; // ボタン無効化
+            saveBtn.innerText = "同期中...";
 
-            const prices = [];
-            document.querySelectorAll('#price-entry-list > div').forEach(el => {
-                prices.push({ shop: el.querySelector('.shop-name').value, loc: el.querySelector('.shop-loc').value, price: el.querySelector('.shop-price').value });
-            });
-
-            const photoFiles = document.getElementById('photo').files;
-            let imageUrls = [];
             try {
+                const prices = [];
+                document.querySelectorAll('#price-entry-list > div').forEach(el => {
+                    prices.push({ shop: el.querySelector('.shop-name').value, loc: el.querySelector('.shop-loc').value, price: el.querySelector('.shop-price').value });
+                });
+
+                const photoFiles = document.getElementById('photo').files;
+                let imageUrls = [];
                 for (let file of photoFiles) {
                     const storageRef = storage.ref(`images/${Date.now()}_${file.name}`);
                     await storageRef.put(file);
                     imageUrls.push(await storageRef.getDownloadURL());
                 }
+
                 const itemData = {
                     author: document.getElementById('author').value,
                     name: name,
@@ -238,11 +267,24 @@
                     timestamp: Date.now()
                 };
                 if(imageUrls.length > 0) itemData.imageUrls = imageUrls;
+
                 const ref = editingId ? database.ref('items/' + editingId) : database.ref('items').push();
                 await ref.update(itemData);
+                
                 saveBtn.innerText = "保存完了！";
-                setTimeout(() => { goHome(); }, 800);
-            } catch (e) { alert("エラー: " + e.message); saveBtn.disabled = false; saveBtn.innerText = "保存して同期"; }
+                
+                // 少し待ってから元の画面へ戻る
+                setTimeout(() => {
+                    saveBtn.disabled = false; // ここでロック解除！
+                    if (editingId) startBrowseMode(); else goHome();
+                    resetForm();
+                }, 800);
+
+            } catch (e) {
+                alert("エラー: " + e.message);
+                saveBtn.disabled = false; // エラー時もロック解除
+                saveBtn.innerText = "保存して同期";
+            }
         }
 
         function displayData() {
@@ -257,17 +299,6 @@
                     if (viewMode === 'share' && !item.isPublic) return;
 
                     const stars = item.category !== 'item' ? `<div class="text-yellow-500 text-xs mt-1">` + "⭐".repeat(item.rating || 0) + `</div>` : "";
-                    
-                    let specialInfo = '';
-                    if (item.category === 'hotel') {
-                        specialInfo = `<div class="mt-3 space-y-2">
-                            ${item.hotelInterior ? `<div class="p-2 bg-indigo-50 rounded-lg border border-indigo-100 text-[10px] text-indigo-700">🖼️ <b>内装:</b> ${item.hotelInterior}</div>` : ''}
-                            ${item.hotelMeal ? `<div class="p-2 bg-orange-50 rounded-lg border border-orange-100 text-[10px] text-orange-700">🍴 <b>食事:</b> ${item.hotelMeal}</div>` : ''}
-                        </div>`;
-                    } else if (item.category === 'sushi' && item.sushiFish) {
-                        specialInfo = `<div class="mt-2 p-2 bg-red-50 rounded-lg border border-red-100 text-[10px] text-red-700">🐟 <b>ネタ:</b> ${item.sushiFish} / <b>酢:</b> ${item.sushiVinegar || '-'}</div>`;
-                    }
-
                     const div = document.createElement('div');
                     div.className = 'bg-white rounded-3xl shadow-sm border p-5 relative text-left mb-6 font-bold';
                     div.innerHTML = `
@@ -275,8 +306,6 @@
                         <div class="flex justify-between items-center mb-1"><span class="text-[10px] text-emerald-600">👤 ${item.author}</span>${viewMode === 'my' ? `<div class="space-x-3 text-[10px]"><button onclick="editItem('${key}')" class="text-blue-500">編集</button><button onclick="deleteItem('${key}')" class="text-red-400">削除</button></div>` : ''}</div>
                         <h3 class="font-bold text-lg leading-tight">${item.name}</h3>
                         ${stars}
-                        ${specialInfo}
-                        <div class="flex gap-4 mt-3 mb-1">${item.location ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + item.location)}" target="_blank" class="text-blue-600 text-[10px] underline">📍 地図</a>` : ''}${item.itemUrl ? `<a href="${item.itemUrl}" target="_blank" class="text-orange-600 text-[10px] underline">🔗 リンク</a>` : ''}</div>
                         <div class="mt-3 bg-emerald-50/50 p-4 rounded-xl border-l-4 border-emerald-400 text-xs whitespace-pre-wrap text-gray-600">${item.memo}</div>
                     `;
                     container.appendChild(div);
@@ -286,7 +315,11 @@
 
         function editItem(key) {
             database.ref('items/' + key).once('value').then(snap => {
-                const item = snap.val(); editingId = key; startManualMode();
+                const item = snap.val(); 
+                editingId = key; 
+                startManualMode(); // フォームを表示
+                
+                // 値をセット
                 document.getElementById('input-category').value = item.category;
                 toggleCategoryFields(item.category);
                 document.getElementById('name').value = item.name || '';
@@ -302,46 +335,48 @@
                 document.getElementById('hotel-interior').value = item.hotelInterior || '';
                 document.getElementById('hotel-meal').value = item.hotelMeal || '';
                 document.getElementById('hotel-amenity').value = item.hotelAmenity || '';
+                
                 const priceContainer = document.getElementById('price-entry-list');
                 priceContainer.innerHTML = '';
                 if(item.prices) item.prices.forEach(p => addPriceField(p));
-                document.getElementById('save-btn').innerText = "思い出を更新する";
+                
+                const saveBtn = document.getElementById('save-btn');
+                saveBtn.disabled = false; // 編集開始時に必ず活性化
+                saveBtn.innerText = "思い出を更新する";
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             });
         }
 
-        // 【新機能】バーコードから商品情報を自動取得
+        function resetForm() { 
+            const ids = ['name','location','itemUrl','hours','memo','photo','sushi-fish','sushi-vinegar','hotel-interior','hotel-meal','hotel-amenity','barcode-val'];
+            ids.forEach(id => { if(document.getElementById(id)) document.getElementById(id).value = ''; }); 
+            document.getElementById('price-entry-list').innerHTML = ''; 
+            document.getElementById('rating-val').value = 3; 
+            document.getElementById('isPublic').checked = false; 
+            document.getElementById('save-btn').disabled = false;
+            document.getElementById('save-btn').innerText = "保存して同期";
+            editingId = null; 
+        }
+
+        // その他（バーコード・QR・OCR）
         async function checkExistingProduct(b) {
             const s = await database.ref('items').orderByChild('barcode').equalTo(b).once('value');
             const d = s.val();
             if(d) { editingId = Object.keys(d)[0]; editItem(editingId); return; }
-
-            // 新規バーコードの場合：外部APIで商品名を検索
             document.getElementById('save-btn').innerText = "🔍 商品情報を検索中...";
             try {
-                // Open Food Facts APIを使用（日本の商品も一部対応）
                 const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${b}.json`);
                 const data = await res.json();
-                
                 startManualMode();
                 document.getElementById('barcode-val').value = b;
-                document.getElementById('input-category').value = 'item'; // 調味料カテゴリを自動選択
+                document.getElementById('input-category').value = 'item';
                 toggleCategoryFields('item');
-
                 if (data.status === 1 && data.product.product_name) {
                     document.getElementById('name').value = data.product.product_name;
-                    document.getElementById('memo').value = `ブランド: ${data.product.brands || '不明'}\n${document.getElementById('memo').value}`;
-                } else {
-                    document.getElementById('name').value = ""; 
-                    document.getElementById('name').placeholder = "商品名が見つかりません。手入力してください。";
                 }
-            } catch (e) {
-                console.error(e);
-                startManualMode();
-                document.getElementById('name').value = "JAN:" + b;
-            } finally {
-                document.getElementById('save-btn').innerText = "保存して同期";
-            }
+            } catch (e) { startManualMode(); document.getElementById('name').value = "JAN:" + b; }
+            document.getElementById('save-btn').innerText = "保存して同期";
+            document.getElementById('save-btn').disabled = false;
         }
 
         function searchJAN() { window.open(`https://www.google.com/search?q=${document.getElementById('barcode-val').value}`); }
@@ -349,7 +384,6 @@
         function showQR() { const url = `${window.location.origin}${window.location.pathname}?view=share`; document.getElementById('qr-code-area').innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}">`; document.getElementById('qr-modal').style.display = 'flex'; }
         function closeQR() { document.getElementById('qr-modal').style.display = 'none'; }
         function switchTab(tab) { currentTab = tab; document.querySelectorAll('nav button').forEach(btn => btn.className = 'px-3 py-1 whitespace-nowrap font-bold text-sm text-gray-400'); document.getElementById(`tab-${tab}`).className = 'px-3 py-1 whitespace-nowrap active-tab font-bold text-sm'; displayData(); }
-        function resetForm() { ['name','location','itemUrl','hours','memo','photo','sushi-fish','sushi-vinegar','hotel-interior','hotel-meal','hotel-amenity','barcode-val'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value = ''; }); document.getElementById('price-entry-list').innerHTML = ''; document.getElementById('rating-val').value = 3; document.getElementById('isPublic').checked = false; editingId = null; }
         function startCameraMode() { document.getElementById('section-home').classList.add('hidden'); document.getElementById('section-camera').classList.remove('hidden'); const h = new Html5Qrcode("reader"); document.getElementById('reader').style.display = 'block'; h.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (d) => { h.stop(); document.getElementById('reader').style.display = 'none'; checkExistingProduct(d); }); }
         async function processOCR(i) { if (!i.files[0]) return; document.getElementById('ocr-status').innerText = "⏳ 解析中..."; const r = await Tesseract.recognize(i.files[0], 'jpn'); document.getElementById('memo').value += "\n" + r.data.text; document.getElementById('ocr-status').innerText = "✅ 完了"; }
         function deleteItem(k) { if(confirm('削除しますか？')) database.ref('items/' + k).remove(); }
