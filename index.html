@@ -168,7 +168,6 @@
             if (params.get('view') === 'share') { setViewMode('share'); startBrowseMode(); }
         };
 
-        // 画面遷移管理
         function goHome() { 
             ['section-home', 'section-form', 'section-browse', 'section-camera', 'mode-switcher'].forEach(id => document.getElementById(id).classList.add('hidden')); 
             document.getElementById('section-home').classList.remove('hidden'); 
@@ -176,16 +175,12 @@
         }
 
         function goBackFromForm() { 
-            if (editingId) {
-                startBrowseMode(); // 編集時は一覧へ戻る
-            } else {
-                goHome(); // 新規時はホームへ戻る
-            }
-            resetForm(); // 必ずリセット
+            if (editingId) startBrowseMode(); else goHome();
+            resetForm();
         }
 
         function startManualMode() { 
-            if (!editingId) resetForm(); // 新規作成時のみリセット
+            if (!editingId) resetForm();
             document.getElementById('section-home').classList.add('hidden'); 
             document.getElementById('section-browse').classList.add('hidden');
             document.getElementById('section-form').classList.remove('hidden'); 
@@ -224,13 +219,11 @@
             container.appendChild(div);
         }
 
-        // 保存処理
         async function saveData() {
             const name = document.getElementById('name').value.trim();
             if (!name) return alert('名称を入力してください');
-            
             const saveBtn = document.getElementById('save-btn');
-            saveBtn.disabled = true; // ボタン無効化
+            saveBtn.disabled = true;
             saveBtn.innerText = "同期中...";
 
             try {
@@ -272,17 +265,14 @@
                 await ref.update(itemData);
                 
                 saveBtn.innerText = "保存完了！";
-                
-                // 少し待ってから元の画面へ戻る
                 setTimeout(() => {
-                    saveBtn.disabled = false; // ここでロック解除！
+                    saveBtn.disabled = false;
                     if (editingId) startBrowseMode(); else goHome();
                     resetForm();
                 }, 800);
-
             } catch (e) {
                 alert("エラー: " + e.message);
-                saveBtn.disabled = false; // エラー時もロック解除
+                saveBtn.disabled = false;
                 saveBtn.innerText = "保存して同期";
             }
         }
@@ -298,7 +288,27 @@
                     if (item.category !== currentTab) return;
                     if (viewMode === 'share' && !item.isPublic) return;
 
+                    // 地図URLのバグ修正（不要な数字を削除）
+                    const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + (item.location || ''))}`;
                     const stars = item.category !== 'item' ? `<div class="text-yellow-500 text-xs mt-1">` + "⭐".repeat(item.rating || 0) + `</div>` : "";
+                    
+                    // カテゴリ別情報の表示（修正ポイント）
+                    let specialInfo = '';
+                    if (item.category === 'hotel') {
+                        specialInfo = `
+                            <div class="mt-3 space-y-2">
+                                ${item.hotelInterior ? `<div class="p-2 bg-indigo-50 rounded-lg border border-indigo-100 text-[10px] text-indigo-700">🖼️ <b>内装:</b> ${item.hotelInterior}</div>` : ''}
+                                ${item.hotelMeal ? `<div class="p-2 bg-orange-50 rounded-lg border border-orange-100 text-[10px] text-orange-700">🍴 <b>食事:</b> ${item.hotelMeal}</div>` : ''}
+                                ${item.hotelAmenity ? `<div class="p-2 bg-gray-50 rounded-lg border border-gray-100 text-[10px] text-gray-700">🧼 <b>アメニティ:</b> ${item.hotelAmenity}</div>` : ''}
+                            </div>`;
+                    } else if (item.category === 'sushi' && (item.sushiFish || item.sushiVinegar)) {
+                        specialInfo = `
+                            <div class="mt-2 p-2 bg-red-50 rounded-lg border border-red-100 text-[10px] text-red-700">
+                                🐟 <b>ネタ:</b> ${item.sushiFish || '-'} <br>
+                                🍚 <b>シャリ:</b> ${item.sushiVinegar || '-'}
+                            </div>`;
+                    }
+
                     const div = document.createElement('div');
                     div.className = 'bg-white rounded-3xl shadow-sm border p-5 relative text-left mb-6 font-bold';
                     div.innerHTML = `
@@ -306,7 +316,13 @@
                         <div class="flex justify-between items-center mb-1"><span class="text-[10px] text-emerald-600">👤 ${item.author}</span>${viewMode === 'my' ? `<div class="space-x-3 text-[10px]"><button onclick="editItem('${key}')" class="text-blue-500">編集</button><button onclick="deleteItem('${key}')" class="text-red-400">削除</button></div>` : ''}</div>
                         <h3 class="font-bold text-lg leading-tight">${item.name}</h3>
                         ${stars}
-                        <div class="mt-3 bg-emerald-50/50 p-4 rounded-xl border-l-4 border-emerald-400 text-xs whitespace-pre-wrap text-gray-600">${item.memo}</div>
+                        ${specialInfo}
+                        <div class="flex gap-4 mt-3 mb-1">
+                            ${item.location ? `<a href="${mapUrl}" target="_blank" class="text-blue-600 text-[10px] underline">📍 地図を開く</a>` : ''}
+                            ${item.itemUrl ? `<a href="${item.itemUrl}" target="_blank" class="text-orange-600 text-[10px] underline">🔗 リンク</a>` : ''}
+                        </div>
+                        ${item.hours ? `<details class="mt-2"><summary class="text-[10px] text-gray-400">詳細情報を表示</summary><div class="p-2 bg-gray-50 rounded text-[10px] whitespace-pre-wrap">${item.hours}</div></details>` : ''}
+                        <div class="mt-3 bg-emerald-50/50 p-4 rounded-xl border-l-4 border-emerald-400 text-xs whitespace-pre-wrap text-gray-600">${item.memo || ''}</div>
                     `;
                     container.appendChild(div);
                 });
@@ -315,11 +331,7 @@
 
         function editItem(key) {
             database.ref('items/' + key).once('value').then(snap => {
-                const item = snap.val(); 
-                editingId = key; 
-                startManualMode(); // フォームを表示
-                
-                // 値をセット
+                const item = snap.val(); editingId = key; startManualMode();
                 document.getElementById('input-category').value = item.category;
                 toggleCategoryFields(item.category);
                 document.getElementById('name').value = item.name || '';
@@ -335,14 +347,11 @@
                 document.getElementById('hotel-interior').value = item.hotelInterior || '';
                 document.getElementById('hotel-meal').value = item.hotelMeal || '';
                 document.getElementById('hotel-amenity').value = item.hotelAmenity || '';
-                
                 const priceContainer = document.getElementById('price-entry-list');
                 priceContainer.innerHTML = '';
                 if(item.prices) item.prices.forEach(p => addPriceField(p));
-                
-                const saveBtn = document.getElementById('save-btn');
-                saveBtn.disabled = false; // 編集開始時に必ず活性化
-                saveBtn.innerText = "思い出を更新する";
+                document.getElementById('save-btn').disabled = false;
+                document.getElementById('save-btn').innerText = "思い出を更新する";
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             });
         }
@@ -358,7 +367,6 @@
             editingId = null; 
         }
 
-        // その他（バーコード・QR・OCR）
         async function checkExistingProduct(b) {
             const s = await database.ref('items').orderByChild('barcode').equalTo(b).once('value');
             const d = s.val();
