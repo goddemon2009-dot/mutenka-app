@@ -16,8 +16,6 @@
         .share-mode-bg { background-color: #f0fdf4 !important; }
         #reader { width: 100%; border-radius: 24px; overflow: hidden; display: none; margin-bottom: 20px; }
         .menu-btn { @apply flex flex-col items-center justify-center p-6 rounded-3xl shadow-lg transition-all active:scale-95 text-center; }
-        summary { cursor: pointer; list-style: none; outline: none; }
-        summary::-webkit-details-marker { display: none; }
         .image-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; }
     </style>
 </head>
@@ -32,11 +30,10 @@
             <button onclick="startCameraMode()" class="menu-btn bg-blue-600 text-white shadow-blue-200">
                 <span class="text-4xl mb-2">📸</span>
                 <span class="font-bold text-lg">カメラでスマート入力</span>
-                <span class="text-[10px] opacity-80 text-white/80">バーコード・AI解析</span>
             </button>
             <button onclick="startManualMode()" class="menu-btn bg-white text-emerald-700 border-2 border-emerald-100">
                 <span class="text-4xl mb-2">📝</span>
-                <span class="font-bold text-lg">じっくり詳細入力</span>
+                <span class="font-bold text-lg">詳細入力・思い出を記録</span>
             </button>
             <button onclick="startBrowseMode()" class="menu-btn bg-emerald-500 text-white shadow-emerald-200">
                 <span class="text-4xl mb-2">👀</span>
@@ -51,74 +48,62 @@
                 <h2 id="form-title" class="text-lg font-bold text-emerald-700">📝 データ入力</h2>
                 <button onclick="goBackFromForm()" class="text-gray-400 font-bold">× 戻る</button>
             </div>
+            
             <div class="space-y-4 text-left">
                 <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="text-[10px] font-bold text-gray-400">投稿者</label>
-                        <select id="author" class="w-full p-2.5 border rounded-xl bg-gray-50 text-sm font-bold">
-                            <option value="しょうや">👤 しょうや</option>
-                            <option value="じゅんこ">👩 じゅんこ</option>
-                            <option value="ふみひこ">👨 ふみひこ</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-blue-500">保存先</label>
-                        <select id="input-category" onchange="toggleCategoryFields(this.value)" class="w-full p-2.5 border-2 border-blue-100 rounded-xl bg-blue-50 text-xs font-bold text-blue-700">
-                            <option value="gourmet">🍴 グルメ</option>
-                            <option value="item">🧴 調味料・日用品</option>
-                            <option value="hotel">🏨 ホテル</option>
-                            <option value="sushi">🍣 寿司</option>
-                        </select>
-                    </div>
+                    <select id="author" class="p-2.5 border rounded-xl bg-gray-50 text-sm font-bold">
+                        <option value="しょうや">👤 しょうや</option>
+                        <option value="じゅんこ">👩 じゅんこ</option>
+                        <option value="ふみひこ">👨 ふみひこ</option>
+                    </select>
+                    <select id="input-category" onchange="toggleCategoryFields(this.value)" class="p-2.5 border-2 border-blue-100 rounded-xl bg-blue-50 text-xs font-bold text-blue-700">
+                        <option value="gourmet">🍴 グルメ</option>
+                        <option value="item">🧴 調味料・日用品</option>
+                        <option value="hotel">🏨 ホテル</option>
+                        <option value="sushi">🍣 寿司</option>
+                    </select>
                 </div>
 
                 <div class="flex gap-2">
                     <input type="text" id="name" placeholder="名称（店名・商品名）" class="w-full p-3 border rounded-xl font-bold shadow-sm">
-                    <button id="location-magic-btn" onclick="magicSearchLocation()" class="bg-blue-500 text-white px-3 rounded-xl text-[10px] font-bold shadow-md active:scale-95 transition-all">🔍 住所検索</button>
+                    <button onclick="magicSearch('name')" class="bg-blue-500 text-white px-3 rounded-xl text-[10px] font-bold shadow-md whitespace-nowrap">🔍 名称検索</button>
                 </div>
-                <input type="hidden" id="barcode-val">
 
                 <div id="field-phone" class="flex gap-2">
-                    <input type="tel" id="phone" placeholder="電話番号" class="w-full p-3 border rounded-xl text-sm">
+                    <input type="tel" id="phone" placeholder="電話番号（ハイフンなし可）" class="w-full p-3 border rounded-xl text-sm">
+                    <button onclick="magicSearch('phone')" class="bg-indigo-500 text-white px-3 rounded-xl text-[10px] font-bold shadow-md whitespace-nowrap">📞 番号検索</button>
                 </div>
 
                 <div id="fields-hotel" class="hidden space-y-3 bg-indigo-50 p-3 rounded-xl border border-indigo-100">
-                    <label class="text-[10px] font-bold text-indigo-600 ml-1">🏨 ホテルの思い出</label>
                     <input type="text" id="hotel-interior" placeholder="お部屋・内装の感想" class="w-full p-2 text-sm border rounded-lg bg-white">
                     <input type="text" id="hotel-meal" placeholder="食事の感想" class="w-full p-2 text-sm border rounded-lg bg-white">
                 </div>
 
                 <div id="fields-sushi" class="hidden space-y-3 bg-red-50 p-3 rounded-xl border border-red-100">
-                    <label class="text-[10px] font-bold text-red-600 ml-1">🍣 寿司のこだわり</label>
-                    <input type="text" id="sushi-fish" placeholder="ネタの種類（例：紋甲いか）" class="w-full p-2 text-sm border rounded-lg bg-white">
+                    <input type="text" id="sushi-fish" placeholder="ネタの種類（例：アオリイカ）" class="w-full p-2 text-sm border rounded-lg bg-white">
                     <input type="text" id="sushi-vinegar" placeholder="シャリの酢（赤酢など）" class="w-full p-2 text-sm border rounded-lg bg-white">
                 </div>
 
                 <div id="fields-comparison" class="hidden space-y-3">
-                    <label class="text-[10px] font-bold text-orange-600 ml-1">💰 価格比較（Amazon・楽天など）</label>
                     <div id="price-entry-list" class="space-y-3"></div>
-                    <button onclick="addPriceField()" class="w-full py-2 bg-orange-50 text-orange-600 border border-orange-200 rounded-xl text-xs font-bold">+ お店・価格を追加</button>
+                    <button onclick="addPriceField()" class="w-full py-2 bg-orange-50 text-orange-600 border border-orange-200 rounded-xl text-xs font-bold">+ 購入先・価格を追加</button>
                 </div>
 
-                <div id="field-location"><input type="text" id="location" placeholder="場所・住所" class="w-full p-3 border rounded-xl text-sm"></div>
+                <input type="text" id="location" placeholder="住所（自動入力可）" class="w-full p-3 border rounded-xl text-sm">
                 
-                <div id="fields-rating" class="space-y-1 bg-yellow-50 p-3 rounded-xl border border-yellow-100">
-                    <label class="text-[10px] font-bold text-yellow-600 ml-1">満足度・おすすめ度 (★1-5)</label>
+                <div id="fields-rating" class="bg-yellow-50 p-3 rounded-xl border border-yellow-100">
+                    <label class="text-[10px] font-bold text-yellow-600">満足度 (★1-5)</label>
                     <input type="range" id="rating-val" min="1" max="5" value="3" class="w-full accent-yellow-500">
                 </div>
 
-                <div id="field-url"><input type="url" id="itemUrl" placeholder="🔗 通販サイトURL" class="w-full p-3 border border-blue-100 rounded-xl text-sm bg-blue-50/20"></div>
+                <input type="url" id="itemUrl" placeholder="🔗 通販・公式サイトURL" class="w-full p-3 border border-blue-100 rounded-xl text-sm bg-blue-50/20">
                 
                 <div class="p-4 border-2 border-dashed border-emerald-100 rounded-xl bg-emerald-50/20">
                     <input type="file" id="photo" accept="image/*" multiple class="text-xs w-full" onchange="processOCR(this)">
                 </div>
 
-                <textarea id="memo" placeholder="自由なメモ" class="w-full p-3 border rounded-xl h-24 text-sm"></textarea>
-                
-                <label class="flex items-center gap-3 p-3 bg-blue-50 rounded-xl cursor-pointer border border-blue-100 font-bold">
-                    <input type="checkbox" id="isPublic" class="w-5 h-5 accent-blue-600">
-                    <span class="text-sm font-bold text-blue-700">職場の仲間に公開する</span>
-                </label>
+                <textarea id="memo" placeholder="こだわりメモ" class="w-full p-3 border rounded-xl h-24 text-sm"></textarea>
+                <input type="hidden" id="barcode-val">
                 
                 <button onclick="saveData()" id="save-btn" class="w-full bg-emerald-500 text-white py-4 rounded-2xl font-bold shadow-lg active:scale-95 transition-all">保存して同期</button>
             </div>
@@ -143,31 +128,38 @@
         const firebaseConfig = { apiKey: "AIzaSyDONjnOEGSzrN3rx-Hhlcq5ew67FTPzvbI", authDomain: "mutenka-app.firebaseapp.com", databaseURL: "https://mutenka-app-default-rtdb.firebaseio.com", projectId: "mutenka-app", storageBucket: "mutenka-app.firebasestorage.app", messagingSenderId: "69649285337", appId: "1:69649285337:web:47d607b94f3331eeca3ec8" };
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database(), storage = firebase.storage();
-        let currentTab = 'gourmet', viewMode = 'my', editingId = null;
+        let currentTab = 'gourmet', editingId = null;
 
+        // 画面制御
         function goHome() { ['section-home', 'section-form', 'section-browse', 'section-camera'].forEach(id => document.getElementById(id).classList.add('hidden')); document.getElementById('section-home').classList.remove('hidden'); resetForm(); }
         function goBackFromForm() { if (editingId) startBrowseMode(); else goHome(); resetForm(); }
         function startManualMode() { if (!editingId) resetForm(); document.getElementById('section-home').classList.add('hidden'); document.getElementById('section-browse').classList.add('hidden'); document.getElementById('section-form').classList.remove('hidden'); toggleCategoryFields(document.getElementById('input-category').value); }
         function startBrowseMode() { document.getElementById('section-home').classList.add('hidden'); document.getElementById('section-form').classList.add('hidden'); document.getElementById('section-browse').classList.remove('hidden'); displayData(); }
 
-        async function magicSearchLocation() {
-            const name = document.getElementById('name').value.trim();
-            if (!name) return alert("店名を入力してください");
+        // 自動検索マジック
+        async function magicSearch(type) {
+            const query = type === 'name' ? document.getElementById('name').value : document.getElementById('phone').value;
+            if (!query) return alert("入力してください");
+            
             try {
-                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(name + ' 日本')}&limit=1`);
+                // OpenStreetMapで検索
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ' 日本')}&addressdetails=1&limit=1`);
                 const data = await res.json();
-                if (data && data.length > 0) document.getElementById('location').value = data[0].display_name;
-                else alert("住所が見つかりませんでした");
-            } catch (e) { console.error(e); }
+                if (data && data.length > 0) {
+                    document.getElementById('location').value = data[0].display_name;
+                } else {
+                    if(confirm("地図データに見つかりません。Googleで検索して住所を確定させますか？")) {
+                        window.open(`https://www.google.com/search?q=${encodeURIComponent(query + ' 住所')}`, '_blank');
+                    }
+                }
+            } catch (e) { alert("検索エラー"); }
         }
 
         function toggleCategoryFields(cat) {
             document.getElementById('fields-sushi').classList.toggle('hidden', cat !== 'sushi');
             document.getElementById('fields-hotel').classList.toggle('hidden', cat !== 'hotel');
             document.getElementById('fields-comparison').classList.toggle('hidden', cat !== 'item');
-            document.getElementById('field-location').classList.toggle('hidden', cat === 'item');
             document.getElementById('field-phone').classList.toggle('hidden', cat === 'item');
-            document.getElementById('location-magic-btn').classList.toggle('hidden', cat === 'item');
         }
 
         function addPriceField(data = {}) {
@@ -175,7 +167,7 @@
             const id = Date.now();
             const div = document.createElement('div');
             div.className = 'p-3 bg-orange-50/50 rounded-xl border border-orange-100 space-y-2 relative';
-            div.innerHTML = `<button onclick="this.parentElement.remove()" class="absolute top-1 right-2 text-orange-300 text-xs font-bold">×</button><div class="flex gap-2"><input type="text" placeholder="お店名（例:Amazon）" class="shop-name w-full p-2 text-xs border rounded-lg bg-white font-bold" value="${data.shop || ''}"></div><div class="flex gap-2"><input type="text" placeholder="URL" class="shop-loc w-full p-2 text-[10px] border rounded-lg bg-white" value="${data.loc || ''}"><input type="number" placeholder="値段" class="shop-price w-24 p-2 text-xs border rounded-lg bg-white font-bold" value="${data.price || ''}"></div>`;
+            div.innerHTML = `<button onclick="this.parentElement.remove()" class="absolute top-1 right-2 text-orange-300">×</button><input type="text" placeholder="購入先（Amazon等）" class="shop-name w-full p-2 text-xs border rounded-lg font-bold" value="${data.shop || ''}"><div class="flex gap-2"><input type="text" placeholder="URL" class="shop-loc w-full p-2 text-[10px] border rounded-lg" value="${data.loc || ''}"><input type="number" placeholder="価格" class="shop-price w-24 p-2 text-xs border rounded-lg font-bold" value="${data.price || ''}"></div>`;
             container.appendChild(div);
         }
 
@@ -183,7 +175,8 @@
             const name = document.getElementById('name').value.trim();
             if (!name) return alert('名称を入力してください');
             const saveBtn = document.getElementById('save-btn');
-            saveBtn.disabled = true; saveBtn.innerText = "保存中...";
+            saveBtn.disabled = true; saveBtn.innerText = "同期中...";
+
             try {
                 const prices = [];
                 document.querySelectorAll('#price-entry-list > div').forEach(el => {
@@ -196,29 +189,22 @@
                     await storageRef.put(file);
                     imageUrls.push(await storageRef.getDownloadURL());
                 }
+
                 const itemData = {
-                    author: document.getElementById('author').value,
-                    name: name,
-                    category: document.getElementById('input-category').value,
-                    isPublic: document.getElementById('isPublic').checked,
-                    location: document.getElementById('location').value.trim(),
-                    phone: document.getElementById('phone').value.trim(),
-                    itemUrl: document.getElementById('itemUrl').value.trim(),
-                    memo: document.getElementById('memo').value.trim(),
-                    prices: prices,
-                    rating: document.getElementById('rating-val').value,
-                    sushiFish: document.getElementById('sushi-fish').value,
-                    sushiVinegar: document.getElementById('sushi-vinegar').value,
-                    hotelInterior: document.getElementById('hotel-interior').value,
-                    hotelMeal: document.getElementById('hotel-meal').value,
-                    barcode: document.getElementById('barcode-val').value || "",
-                    timestamp: Date.now()
+                    author: document.getElementById('author').value, name: name, category: document.getElementById('input-category').value,
+                    isPublic: document.getElementById('isPublic').checked, location: document.getElementById('location').value,
+                    phone: document.getElementById('phone').value, itemUrl: document.getElementById('itemUrl').value,
+                    memo: document.getElementById('memo').value, prices: prices, rating: document.getElementById('rating-val').value,
+                    sushiFish: document.getElementById('sushi-fish').value, sushiVinegar: document.getElementById('sushi-vinegar').value,
+                    hotelInterior: document.getElementById('hotel-interior').value, hotelMeal: document.getElementById('hotel-meal').value,
+                    barcode: document.getElementById('barcode-val').value || "", timestamp: Date.now()
                 };
                 if(imageUrls.length > 0) itemData.imageUrls = imageUrls;
+
                 const ref = editingId ? database.ref('items/' + editingId) : database.ref('items').push();
                 await ref.update(itemData);
                 saveBtn.innerText = "完了！";
-                setTimeout(() => { if (editingId) startBrowseMode(); else goHome(); resetForm(); }, 800);
+                setTimeout(() => { saveBtn.disabled = false; goBackFromForm(); }, 800);
             } catch (e) { alert("エラー: " + e.message); saveBtn.disabled = false; saveBtn.innerText = "保存"; }
         }
 
@@ -232,44 +218,35 @@
                     const item = data[key];
                     if (item.category !== currentTab) return;
 
-                    // 星評価の生成
-                    const stars = `<div class="text-yellow-500 text-xs mt-1">` + "⭐".repeat(item.rating || 0) + `</div>`;
-                    
-                    // 【バグ修正】価格リストの生成
+                    // 星評価と価格リストを確実に表示
+                    const stars = `<div class="text-yellow-500 text-xs mt-1 font-bold">` + "⭐".repeat(item.rating || 0) + `</div>`;
                     let priceHtml = '';
                     if (item.prices && item.prices.length > 0) {
                         priceHtml = `<div class="grid grid-cols-1 gap-2 mt-3">` + item.prices.map(p => `
-                            <div class="p-3 bg-gray-50 rounded-xl border border-gray-100 flex justify-between items-center shadow-sm">
-                                <div class="truncate mr-2">
-                                    <div class="text-[11px] font-bold text-gray-800">${p.shop || '不明'}</div>
-                                    ${p.loc ? `<a href="${p.loc}" target="_blank" class="text-[9px] text-blue-500 underline">🔗 商品ページ</a>` : ''}
-                                </div>
+                            <div class="p-3 bg-gray-50 rounded-xl border border-gray-100 flex justify-between items-center">
+                                <div class="truncate mr-2"><div class="text-[11px] font-bold">${p.shop || '不明'}</div>${p.loc ? `<a href="${p.loc}" target="_blank" class="text-[9px] text-blue-500 underline">🔗 ページ</a>` : ''}</div>
                                 <div class="text-emerald-600 font-bold text-sm">¥${Number(p.price).toLocaleString()}</div>
-                            </div>
-                        `).join('') + `</div>`;
+                            </div>`).join('') + `</div>`;
                     }
 
-                    let specialInfo = '';
-                    if (item.category === 'hotel') {
-                        specialInfo = `<div class="mt-3 space-y-2">${item.hotelInterior ? `<div class="p-2 bg-indigo-50 rounded-lg text-[10px] text-indigo-700">🖼️ ${item.hotelInterior}</div>` : ''}${item.hotelMeal ? `<div class="p-2 bg-orange-50 rounded-lg text-[10px] text-orange-700">🍴 ${item.hotelMeal}</div>` : ''}</div>`;
-                    } else if (item.category === 'sushi') {
-                        specialInfo = `<div class="mt-2 p-2 bg-red-50 rounded-lg text-[10px] text-red-700">🐟 ネタ: ${item.sushiFish || '-'} / 🍚 酢: ${item.sushiVinegar || '-'}</div>`;
-                    }
+                    let special = '';
+                    if (item.category === 'hotel') special = `<div class="mt-3 space-y-1">${item.hotelInterior ? `<div class="p-2 bg-indigo-50 rounded-lg text-[10px] text-indigo-700">🖼️ ${item.hotelInterior}</div>` : ''}${item.hotelMeal ? `<div class="p-2 bg-orange-50 rounded-lg text-[10px] text-orange-700">🍴 ${item.hotelMeal}</div>` : ''}</div>`;
+                    else if (item.category === 'sushi') special = `<div class="mt-2 p-2 bg-red-50 rounded-lg text-[10px] text-red-700">🐟 ${item.sushiFish || '-'} / 🍚 ${item.sushiVinegar || '-'}</div>`;
 
                     const div = document.createElement('div');
                     div.className = 'bg-white rounded-3xl shadow-sm border p-5 relative text-left mb-6 font-bold';
                     div.innerHTML = `
                         ${item.imageUrls ? `<div class="image-grid mb-4">${item.imageUrls.map(url => `<img src="${url}" class="w-full h-24 object-cover rounded-xl shadow-sm">`).join('')}</div>` : ''}
                         <div class="flex justify-between items-center mb-1"><span class="text-[10px] text-emerald-600">👤 ${item.author}</span><div class="space-x-3 text-[10px]"><button onclick="editItem('${key}')" class="text-blue-500">編集</button><button onclick="deleteItem('${key}')" class="text-red-400">削除</button></div></div>
-                        <h3 class="font-bold text-lg leading-tight">${item.name}</h3>
+                        <h3 class="font-bold text-lg">${item.name}</h3>
                         ${stars}
                         ${priceHtml}
-                        ${specialInfo}
+                        ${special}
                         <div class="flex gap-4 mt-3 mb-1">
-                            ${(item.category !== 'item' && item.location) ? `<a href="http://googleusercontent.com/maps.google.com/search?q=${encodeURIComponent(item.name + ' ' + item.location)}" target="_blank" class="text-blue-600 text-[10px] underline font-bold">📍 地図</a>` : ''}
+                            ${(item.category !== 'item' && item.location) ? `<a href="http://googleusercontent.com/maps.google.com/search?q=${encodeURIComponent(item.name + ' ' + item.location)}" target="_blank" class="text-blue-600 text-[10px] underline">📍 地図</a>` : ''}
                             ${item.itemUrl ? `<a href="${item.itemUrl}" target="_blank" class="text-orange-600 text-[10px] underline font-bold">🛒 通販サイト</a>` : ''}
                         </div>
-                        <div class="mt-3 bg-emerald-50/50 p-4 rounded-xl border-l-4 border-emerald-400 text-xs whitespace-pre-wrap text-gray-600">${item.memo || ''}</div>
+                        <div class="mt-3 bg-emerald-50/50 p-4 rounded-xl text-xs text-gray-600">${item.memo || ''}</div>
                     `;
                     container.appendChild(div);
                 });
@@ -294,6 +271,7 @@
                 const priceContainer = document.getElementById('price-entry-list');
                 priceContainer.innerHTML = '';
                 if(item.prices) item.prices.forEach(p => addPriceField(p));
+                document.getElementById('save-btn').disabled = false;
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             });
         }
@@ -303,10 +281,11 @@
             ids.forEach(id => { if(document.getElementById(id)) document.getElementById(id).value = ''; }); 
             document.getElementById('price-entry-list').innerHTML = ''; 
             document.getElementById('rating-val').value = 3; 
+            document.getElementById('save-btn').disabled = false;
             editingId = null; 
         }
 
-        function switchTab(tab) { currentTab = tab; document.querySelectorAll('nav button').forEach(btn => btn.className = 'px-3 py-1 whitespace-nowrap font-bold text-sm text-gray-400'); document.getElementById(`tab-${tab}`).className = 'px-3 py-1 whitespace-nowrap active-tab font-bold text-sm'; displayData(); }
+        function switchTab(tab) { currentTab = tab; document.querySelectorAll('nav button').forEach(btn => btn.className = 'px-3 py-1 whitespace-nowrap text-sm text-gray-400 font-bold'); document.getElementById(`tab-${tab}`).className = 'px-3 py-1 whitespace-nowrap active-tab text-sm font-bold'; displayData(); }
         function deleteItem(k) { if(confirm('削除しますか？')) database.ref('items/' + k).remove(); }
         function startCameraMode() { document.getElementById('section-home').classList.add('hidden'); document.getElementById('section-camera').classList.remove('hidden'); const h = new Html5Qrcode("reader"); document.getElementById('reader').style.display = 'block'; h.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (d) => { h.stop(); document.getElementById('reader').style.display = 'none'; checkExistingProduct(d); }); }
         async function checkExistingProduct(b) { const s = await database.ref('items').orderByChild('barcode').equalTo(b).once('value'); const d = s.val(); if(d) { editingId = Object.keys(d)[0]; editItem(editingId); } else { startManualMode(); document.getElementById('barcode-val').value = b; } }
