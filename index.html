@@ -111,7 +111,7 @@
                 </div>
 
                 <div id="field-location" class="relative">
-                    <input type="text" id="location" placeholder="場所・住所（自動入力可）" class="w-full p-3 border rounded-xl text-sm">
+                    <input type="text" id="location" placeholder="場所・住所" class="w-full p-3 border rounded-xl text-sm">
                     <div id="location-status" class="absolute right-3 top-3.5 text-[8px] font-bold text-blue-500"></div>
                 </div>
                 
@@ -120,7 +120,7 @@
                     <input type="range" id="rating-val" min="1" max="5" value="3" class="w-full accent-yellow-500">
                 </div>
 
-                <div id="field-url"><input type="url" id="itemUrl" placeholder="🔗 関連URL" class="w-full p-3 border border-blue-100 rounded-xl text-sm bg-blue-50/20"></div>
+                <div id="field-url"><input type="url" id="itemUrl" placeholder="🔗 通販サイトURL" class="w-full p-3 border border-blue-100 rounded-xl text-sm bg-blue-50/20"></div>
                 
                 <textarea id="hours" placeholder="詳細情報" class="w-full p-3 border rounded-xl h-20 text-sm"></textarea>
                 
@@ -156,14 +156,6 @@
             </nav>
             <div id="list-container" class="space-y-6 pb-20 font-bold"></div>
         </div>
-
-        <div id="qr-modal" onclick="closeQR()" class="fixed inset-0 bg-black/80 z-[100] hidden items-center justify-center p-6">
-            <div onclick="event.stopPropagation()" class="bg-white p-8 rounded-3xl text-center w-full max-w-xs relative">
-                <h3 class="font-bold text-emerald-700 mb-4">職場共有用リンク</h3>
-                <div id="qr-code-area" class="bg-gray-100 aspect-square w-full mb-4 flex items-center justify-center rounded-xl overflow-hidden shadow-inner"></div>
-                <button onclick="closeQR()" class="w-full py-3 bg-emerald-500 text-white rounded-xl font-bold">閉じる</button>
-            </div>
-        </div>
     </main>
 
     <script>
@@ -172,59 +164,34 @@
         const database = firebase.database(), storage = firebase.storage();
         let currentTab = 'gourmet', viewMode = 'my', editingId = null;
 
-        window.onload = () => {
-            const params = new URLSearchParams(window.location.search);
-            if (params.get('view') === 'share') { setViewMode('share'); startBrowseMode(); }
-        };
+        function goHome() { ['section-home', 'section-form', 'section-browse', 'section-camera'].forEach(id => document.getElementById(id).classList.add('hidden')); document.getElementById('section-home').classList.remove('hidden'); resetForm(); }
+        function goBackFromForm() { if (editingId) startBrowseMode(); else goHome(); resetForm(); }
+        function startManualMode() { if (!editingId) resetForm(); document.getElementById('section-home').classList.add('hidden'); document.getElementById('section-browse').classList.add('hidden'); document.getElementById('section-form').classList.remove('hidden'); toggleCategoryFields(document.getElementById('input-category').value); }
+        function startBrowseMode() { document.getElementById('section-home').classList.add('hidden'); document.getElementById('section-form').classList.add('hidden'); document.getElementById('section-browse').classList.remove('hidden'); displayData(); }
 
-        function goHome() { 
-            ['section-home', 'section-form', 'section-browse', 'section-camera', 'mode-switcher'].forEach(id => document.getElementById(id).classList.add('hidden')); 
-            document.getElementById('section-home').classList.remove('hidden'); 
-            resetForm(); 
-        }
-
-        function goBackFromForm() { 
-            if (editingId) startBrowseMode(); else goHome();
-            resetForm();
-        }
-
-        function startManualMode() { 
-            if (!editingId) resetForm();
-            document.getElementById('section-home').classList.add('hidden'); 
-            document.getElementById('section-browse').classList.add('hidden');
-            document.getElementById('section-form').classList.remove('hidden'); 
-            toggleCategoryFields(document.getElementById('input-category').value); 
-        }
-
-        function startBrowseMode() { 
-            document.getElementById('section-home').classList.add('hidden'); 
-            document.getElementById('section-form').classList.add('hidden'); 
-            document.getElementById('section-browse').classList.remove('hidden'); 
-            document.getElementById('mode-switcher').classList.remove('hidden'); 
-            displayData(); 
-        }
-
-        // 名称から住所検索
+        // 名称から住所検索（ハイブリッド方式）
         async function magicSearchLocation() {
             const name = document.getElementById('name').value.trim();
-            if (!name) return alert("まずは店名を入力してください");
+            if (!name) return alert("店名を入力してください");
             const status = document.getElementById('location-status');
             status.innerText = "⏳ 検索中...";
             try {
-                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(name)}&addressdetails=1&limit=1`);
+                // 日本を優先して検索
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(name + ' 日本')}&addressdetails=1&limit=1`);
                 const data = await res.json();
                 if (data && data.length > 0) {
                     document.getElementById('location').value = data[0].display_name;
                     status.innerText = "✅ 完了";
                     setTimeout(() => status.innerText = "", 2000);
                 } else {
-                    status.innerText = "❌ 見つかりません";
-                    alert("住所が見つかりませんでした。手入力してください。");
+                    status.innerText = "❌ 不明";
+                    if(confirm("地図データに見つかりません。Googleで検索しますか？")) {
+                        window.open(`https://www.google.com/search?q=${encodeURIComponent(name + ' 住所')}`, '_blank');
+                    }
                 }
             } catch (e) { status.innerText = "⚠️ エラー"; }
         }
 
-        // 電話番号からWeb検索（住所特定を補助）
         function searchPhoneOnWeb() {
             const phone = document.getElementById('phone').value.trim();
             if (!phone) return alert("電話番号を入力してください");
@@ -232,37 +199,23 @@
         }
 
         function toggleCategoryFields(cat) {
-            document.getElementById('fields-sushi').classList.toggle('hidden', cat !== 'sushi');
-            document.getElementById('fields-hotel').classList.toggle('hidden', cat !== 'hotel');
-            document.getElementById('fields-rating').classList.toggle('hidden', cat === 'item');
-            document.getElementById('fields-comparison').classList.toggle('hidden', cat !== 'item');
-            document.getElementById('field-location').classList.toggle('hidden', cat === 'item');
-            document.getElementById('field-url').classList.toggle('hidden', cat === 'item');
-            document.getElementById('field-phone').classList.toggle('hidden', cat === 'item');
-            document.getElementById('location-magic-btn').classList.toggle('hidden', cat === 'item');
+            ['fields-sushi', 'fields-hotel', 'fields-comparison', 'field-location', 'field-phone', 'location-magic-btn'].forEach(id => {
+                const el = document.getElementById(id);
+                if(id === 'fields-sushi') el.classList.toggle('hidden', cat !== 'sushi');
+                else if(id === 'fields-hotel') el.classList.toggle('hidden', cat !== 'hotel');
+                else if(id === 'fields-comparison') el.classList.toggle('hidden', cat !== 'item');
+                else if(id === 'field-location' || id === 'field-phone' || id === 'location-magic-btn') el.classList.toggle('hidden', cat === 'item');
+            });
             document.getElementById('jan-search-btn').classList.toggle('hidden', !document.getElementById('barcode-val').value);
             const h = document.getElementById('hours');
-            if(cat === 'item') h.placeholder = "🧪 原材料・添加物リスト";
-            else if(cat === 'hotel') h.placeholder = "🏨 周辺環境・アクセス詳細";
-            else h.placeholder = "🕒 営業時間・メニュー詳細";
-            if(cat === 'item' && document.getElementById('price-entry-list').children.length === 0) addPriceField();
-        }
-
-        function addPriceField(data = {}) {
-            const container = document.getElementById('price-entry-list');
-            const id = Date.now();
-            const div = document.createElement('div');
-            div.className = 'p-3 bg-orange-50/50 rounded-xl border border-orange-100 space-y-2 relative';
-            div.innerHTML = `<button onclick="this.parentElement.remove()" class="absolute top-1 right-2 text-orange-300 text-xs font-bold">×</button><div class="flex gap-2"><input type="text" placeholder="お店名" class="shop-name w-full p-2 text-xs border rounded-lg bg-white font-bold" value="${data.shop || ''}"></div><div class="flex gap-2"><input type="text" placeholder="URL" class="shop-loc w-full p-2 text-[10px] border rounded-lg bg-white" value="${data.loc || ''}"><input type="number" placeholder="値段" class="shop-price w-24 p-2 text-xs border rounded-lg bg-white font-bold" value="${data.price || ''}"></div>`;
-            container.appendChild(div);
+            h.placeholder = (cat === 'item') ? "🧪 原材料・添加物" : "🕒 営業時間・詳細";
         }
 
         async function saveData() {
             const name = document.getElementById('name').value.trim();
             if (!name) return alert('名称を入力してください');
             const saveBtn = document.getElementById('save-btn');
-            saveBtn.disabled = true;
-            saveBtn.innerText = "同期中...";
+            saveBtn.disabled = true; saveBtn.innerText = "同期中...";
             try {
                 const prices = [];
                 document.querySelectorAll('#price-entry-list > div').forEach(el => {
@@ -298,17 +251,9 @@
                 if(imageUrls.length > 0) itemData.imageUrls = imageUrls;
                 const ref = editingId ? database.ref('items/' + editingId) : database.ref('items').push();
                 await ref.update(itemData);
-                saveBtn.innerText = "保存完了！";
-                setTimeout(() => {
-                    saveBtn.disabled = false;
-                    if (editingId) startBrowseMode(); else goHome();
-                    resetForm();
-                }, 800);
-            } catch (e) {
-                alert("エラー: " + e.message);
-                saveBtn.disabled = false;
-                saveBtn.innerText = "保存して同期";
-            }
+                saveBtn.innerText = "完了！";
+                setTimeout(() => { if (editingId) startBrowseMode(); else goHome(); resetForm(); }, 800);
+            } catch (e) { alert("エラー: " + e.message); saveBtn.disabled = false; saveBtn.innerText = "保存"; }
         }
 
         function displayData() {
@@ -322,17 +267,17 @@
                     if (item.category !== currentTab) return;
                     if (viewMode === 'share' && !item.isPublic) return;
 
-                    const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + (item.location || ''))}`;
                     const stars = item.category !== 'item' ? `<div class="text-yellow-500 text-xs mt-1">` + "⭐".repeat(item.rating || 0) + `</div>` : "";
                     
+                    // カテゴリ別情報の強化表示
                     let specialInfo = '';
                     if (item.category === 'hotel') {
                         specialInfo = `<div class="mt-3 space-y-2">
                             ${item.hotelInterior ? `<div class="p-2 bg-indigo-50 rounded-lg border border-indigo-100 text-[10px] text-indigo-700">🖼️ <b>内装:</b> ${item.hotelInterior}</div>` : ''}
                             ${item.hotelMeal ? `<div class="p-2 bg-orange-50 rounded-lg border border-orange-100 text-[10px] text-orange-700">🍴 <b>食事:</b> ${item.hotelMeal}</div>` : ''}
                         </div>`;
-                    } else if (item.category === 'sushi' && (item.sushiFish || item.sushiVinegar)) {
-                        specialInfo = `<div class="mt-2 p-2 bg-red-50 rounded-lg border border-red-100 text-[10px] text-red-700">🐟 <b>ネタ:</b> ${item.sushiFish || '-'} / 🍚 <b>シャリ:</b> ${item.sushiVinegar || '-'}</div>`;
+                    } else if (item.category === 'sushi') {
+                        specialInfo = `<div class="mt-2 p-2 bg-red-50 rounded-lg border border-red-100 text-[10px] text-red-700">🐟 <b>ネタ:</b> ${item.sushiFish || '-'} / 🍚 <b>酢:</b> ${item.sushiVinegar || '-'}</div>`;
                     }
 
                     const div = document.createElement('div');
@@ -342,11 +287,10 @@
                         <div class="flex justify-between items-center mb-1"><span class="text-[10px] text-emerald-600">👤 ${item.author}</span>${viewMode === 'my' ? `<div class="space-x-3 text-[10px]"><button onclick="editItem('${key}')" class="text-blue-500">編集</button><button onclick="deleteItem('${key}')" class="text-red-400">削除</button></div>` : ''}</div>
                         <h3 class="font-bold text-lg leading-tight">${item.name}</h3>
                         ${stars}
-                        ${item.phone ? `<div class="text-[10px] text-gray-500 mt-1">📞 ${item.phone}</div>` : ''}
                         ${specialInfo}
                         <div class="flex gap-4 mt-3 mb-1">
-                            ${item.location ? `<a href="${mapUrl}" target="_blank" class="text-blue-600 text-[10px] underline">📍 地図</a>` : ''}
-                            ${item.itemUrl ? `<a href="${item.itemUrl}" target="_blank" class="text-orange-600 text-[10px] underline">🔗 リンク</a>` : ''}
+                            ${(item.category !== 'item' && item.location) ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + item.location)}" target="_blank" class="text-blue-600 text-[10px] underline">📍 地図</a>` : ''}
+                            ${item.itemUrl ? `<a href="${item.itemUrl}" target="_blank" class="text-orange-600 text-[10px] underline font-bold">🛒 通販サイト</a>` : ''}
                         </div>
                         <div class="mt-3 bg-emerald-50/50 p-4 rounded-xl border-l-4 border-emerald-400 text-xs whitespace-pre-wrap text-gray-600">${item.memo || ''}</div>
                     `;
@@ -366,8 +310,6 @@
                 document.getElementById('itemUrl').value = item.itemUrl || '';
                 document.getElementById('hours').value = item.hours || '';
                 document.getElementById('memo').value = item.memo || '';
-                document.getElementById('isPublic').checked = item.isPublic || false;
-                document.getElementById('barcode-val').value = item.barcode || '';
                 document.getElementById('rating-val').value = item.rating || 3;
                 document.getElementById('sushi-fish').value = item.sushiFish || '';
                 document.getElementById('sushi-vinegar').value = item.sushiVinegar || '';
@@ -377,8 +319,6 @@
                 const priceContainer = document.getElementById('price-entry-list');
                 priceContainer.innerHTML = '';
                 if(item.prices) item.prices.forEach(p => addPriceField(p));
-                document.getElementById('save-btn').disabled = false;
-                document.getElementById('save-btn').innerText = "思い出を更新する";
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             });
         }
@@ -388,38 +328,23 @@
             ids.forEach(id => { if(document.getElementById(id)) document.getElementById(id).value = ''; }); 
             document.getElementById('price-entry-list').innerHTML = ''; 
             document.getElementById('rating-val').value = 3; 
-            document.getElementById('isPublic').checked = false; 
-            document.getElementById('save-btn').disabled = false;
-            document.getElementById('save-btn').innerText = "保存して同期";
             editingId = null; 
         }
 
-        async function checkExistingProduct(b) {
-            const s = await database.ref('items').orderByChild('barcode').equalTo(b).once('value');
-            const d = s.val();
-            if(d) { editingId = Object.keys(d)[0]; editItem(editingId); return; }
-            document.getElementById('save-btn').innerText = "🔍 商品情報を検索中...";
-            try {
-                const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${b}.json`);
-                const data = await res.json();
-                startManualMode();
-                document.getElementById('barcode-val').value = b;
-                document.getElementById('input-category').value = 'item';
-                toggleCategoryFields('item');
-                if (data.status === 1 && data.product.product_name) {
-                    document.getElementById('name').value = data.product.product_name;
-                }
-            } catch (e) { startManualMode(); document.getElementById('name').value = "JAN:" + b; }
-            document.getElementById('save-btn').innerText = "保存して同期";
-            document.getElementById('save-btn').disabled = false;
+        function addPriceField(data = {}) {
+            const container = document.getElementById('price-entry-list');
+            const id = Date.now();
+            const div = document.createElement('div');
+            div.className = 'p-3 bg-orange-50/50 rounded-xl border border-orange-100 space-y-2 relative';
+            div.innerHTML = `<button onclick="this.parentElement.remove()" class="absolute top-1 right-2 text-orange-300 text-xs font-bold">×</button><div class="flex gap-2"><input type="text" placeholder="お店名" class="shop-name w-full p-2 text-xs border rounded-lg bg-white font-bold" value="${data.shop || ''}"></div><div class="flex gap-2"><input type="text" placeholder="URL" class="shop-loc w-full p-2 text-[10px] border rounded-lg bg-white" value="${data.loc || ''}"><input type="number" placeholder="値段" class="shop-price w-24 p-2 text-xs border rounded-lg bg-white font-bold" value="${data.price || ''}"></div>`;
+            container.appendChild(div);
         }
 
         function searchJAN() { window.open(`https://www.google.com/search?q=${document.getElementById('barcode-val').value}`); }
         function setViewMode(mode) { viewMode = mode; document.getElementById('body').classList.toggle('share-mode-bg', mode === 'share'); displayData(); }
-        function showQR() { const url = `${window.location.origin}${window.location.pathname}?view=share`; document.getElementById('qr-code-area').innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}">`; document.getElementById('qr-modal').style.display = 'flex'; }
-        function closeQR() { document.getElementById('qr-modal').style.display = 'none'; }
         function switchTab(tab) { currentTab = tab; document.querySelectorAll('nav button').forEach(btn => btn.className = 'px-3 py-1 whitespace-nowrap font-bold text-sm text-gray-400'); document.getElementById(`tab-${tab}`).className = 'px-3 py-1 whitespace-nowrap active-tab font-bold text-sm'; displayData(); }
         function startCameraMode() { document.getElementById('section-home').classList.add('hidden'); document.getElementById('section-camera').classList.remove('hidden'); const h = new Html5Qrcode("reader"); document.getElementById('reader').style.display = 'block'; h.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (d) => { h.stop(); document.getElementById('reader').style.display = 'none'; checkExistingProduct(d); }); }
+        async function checkExistingProduct(b) { const s = await database.ref('items').orderByChild('barcode').equalTo(b).once('value'); const d = s.val(); if(d) { editingId = Object.keys(d)[0]; editItem(editingId); } else { startManualMode(); document.getElementById('barcode-val').value = b; } }
         async function processOCR(i) { if (!i.files[0]) return; document.getElementById('ocr-status').innerText = "⏳ 解析中..."; const r = await Tesseract.recognize(i.files[0], 'jpn'); document.getElementById('memo').value += "\n" + r.data.text; document.getElementById('ocr-status').innerText = "✅ 完了"; }
         function deleteItem(k) { if(confirm('削除しますか？')) database.ref('items/' + k).remove(); }
     </script>
