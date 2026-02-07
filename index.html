@@ -87,6 +87,11 @@
                 </div>
                 <input type="hidden" id="barcode-val">
 
+                <div id="field-phone" class="flex gap-2">
+                    <input type="tel" id="phone" placeholder="電話番号" class="w-full p-3 border rounded-xl text-sm">
+                    <button onclick="searchPhoneOnWeb()" class="bg-indigo-500 text-white px-3 rounded-xl text-[10px] font-bold shadow-md active:scale-95">📞 番号検索</button>
+                </div>
+
                 <div id="fields-hotel" class="hidden space-y-3 bg-indigo-50 p-3 rounded-xl border border-indigo-100">
                     <label class="text-[10px] font-bold text-indigo-600 ml-1">🏨 ホテルの思い出メモ</label>
                     <input type="text" id="hotel-interior" placeholder="お部屋・内装の感想" class="w-full p-2 text-sm border rounded-lg bg-white">
@@ -199,32 +204,31 @@
             displayData(); 
         }
 
-        // 【新機能】店名から住所を魔法のように検索
+        // 名称から住所検索
         async function magicSearchLocation() {
             const name = document.getElementById('name').value.trim();
             if (!name) return alert("まずは店名を入力してください");
-            
             const status = document.getElementById('location-status');
             status.innerText = "⏳ 検索中...";
-            
             try {
-                // OpenStreetMap Nominatim APIを使用して住所を検索
                 const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(name)}&addressdetails=1&limit=1`);
                 const data = await res.json();
-                
                 if (data && data.length > 0) {
-                    const result = data[0];
-                    document.getElementById('location').value = result.display_name;
+                    document.getElementById('location').value = data[0].display_name;
                     status.innerText = "✅ 完了";
                     setTimeout(() => status.innerText = "", 2000);
                 } else {
                     status.innerText = "❌ 見つかりません";
                     alert("住所が見つかりませんでした。手入力してください。");
                 }
-            } catch (e) {
-                status.innerText = "⚠️ エラー";
-                console.error(e);
-            }
+            } catch (e) { status.innerText = "⚠️ エラー"; }
+        }
+
+        // 電話番号からWeb検索（住所特定を補助）
+        function searchPhoneOnWeb() {
+            const phone = document.getElementById('phone').value.trim();
+            if (!phone) return alert("電話番号を入力してください");
+            window.open(`https://www.google.com/search?q=${encodeURIComponent(phone)}`, '_blank');
         }
 
         function toggleCategoryFields(cat) {
@@ -234,6 +238,7 @@
             document.getElementById('fields-comparison').classList.toggle('hidden', cat !== 'item');
             document.getElementById('field-location').classList.toggle('hidden', cat === 'item');
             document.getElementById('field-url').classList.toggle('hidden', cat === 'item');
+            document.getElementById('field-phone').classList.toggle('hidden', cat === 'item');
             document.getElementById('location-magic-btn').classList.toggle('hidden', cat === 'item');
             document.getElementById('jan-search-btn').classList.toggle('hidden', !document.getElementById('barcode-val').value);
             const h = document.getElementById('hours');
@@ -258,13 +263,11 @@
             const saveBtn = document.getElementById('save-btn');
             saveBtn.disabled = true;
             saveBtn.innerText = "同期中...";
-
             try {
                 const prices = [];
                 document.querySelectorAll('#price-entry-list > div').forEach(el => {
                     prices.push({ shop: el.querySelector('.shop-name').value, loc: el.querySelector('.shop-loc').value, price: el.querySelector('.shop-price').value });
                 });
-
                 const photoFiles = document.getElementById('photo').files;
                 let imageUrls = [];
                 for (let file of photoFiles) {
@@ -272,13 +275,13 @@
                     await storageRef.put(file);
                     imageUrls.push(await storageRef.getDownloadURL());
                 }
-
                 const itemData = {
                     author: document.getElementById('author').value,
                     name: name,
                     category: document.getElementById('input-category').value,
                     isPublic: document.getElementById('isPublic').checked,
                     location: document.getElementById('location').value.trim(),
+                    phone: document.getElementById('phone').value.trim(),
                     itemUrl: document.getElementById('itemUrl').value.trim(),
                     hours: document.getElementById('hours').value.trim(),
                     memo: document.getElementById('memo').value.trim(),
@@ -293,10 +296,8 @@
                     timestamp: Date.now()
                 };
                 if(imageUrls.length > 0) itemData.imageUrls = imageUrls;
-
                 const ref = editingId ? database.ref('items/' + editingId) : database.ref('items').push();
                 await ref.update(itemData);
-                
                 saveBtn.innerText = "保存完了！";
                 setTimeout(() => {
                     saveBtn.disabled = false;
@@ -321,7 +322,6 @@
                     if (item.category !== currentTab) return;
                     if (viewMode === 'share' && !item.isPublic) return;
 
-                    // 地図URL（バグ修正済み）
                     const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + (item.location || ''))}`;
                     const stars = item.category !== 'item' ? `<div class="text-yellow-500 text-xs mt-1">` + "⭐".repeat(item.rating || 0) + `</div>` : "";
                     
@@ -330,10 +330,9 @@
                         specialInfo = `<div class="mt-3 space-y-2">
                             ${item.hotelInterior ? `<div class="p-2 bg-indigo-50 rounded-lg border border-indigo-100 text-[10px] text-indigo-700">🖼️ <b>内装:</b> ${item.hotelInterior}</div>` : ''}
                             ${item.hotelMeal ? `<div class="p-2 bg-orange-50 rounded-lg border border-orange-100 text-[10px] text-orange-700">🍴 <b>食事:</b> ${item.hotelMeal}</div>` : ''}
-                            ${item.hotelAmenity ? `<div class="p-2 bg-gray-50 rounded-lg border border-gray-100 text-[10px] text-gray-700">🧼 <b>アメニティ:</b> ${item.hotelAmenity}</div>` : ''}
                         </div>`;
                     } else if (item.category === 'sushi' && (item.sushiFish || item.sushiVinegar)) {
-                        specialInfo = `<div class="mt-2 p-2 bg-red-50 rounded-lg border border-red-100 text-[10px] text-red-700">🐟 <b>ネタ:</b> ${item.sushiFish || '-'} <br> 🍚 <b>シャリ:</b> ${item.sushiVinegar || '-'}</div>`;
+                        specialInfo = `<div class="mt-2 p-2 bg-red-50 rounded-lg border border-red-100 text-[10px] text-red-700">🐟 <b>ネタ:</b> ${item.sushiFish || '-'} / 🍚 <b>シャリ:</b> ${item.sushiVinegar || '-'}</div>`;
                     }
 
                     const div = document.createElement('div');
@@ -343,12 +342,12 @@
                         <div class="flex justify-between items-center mb-1"><span class="text-[10px] text-emerald-600">👤 ${item.author}</span>${viewMode === 'my' ? `<div class="space-x-3 text-[10px]"><button onclick="editItem('${key}')" class="text-blue-500">編集</button><button onclick="deleteItem('${key}')" class="text-red-400">削除</button></div>` : ''}</div>
                         <h3 class="font-bold text-lg leading-tight">${item.name}</h3>
                         ${stars}
+                        ${item.phone ? `<div class="text-[10px] text-gray-500 mt-1">📞 ${item.phone}</div>` : ''}
                         ${specialInfo}
                         <div class="flex gap-4 mt-3 mb-1">
-                            ${item.location ? `<a href="${mapUrl}" target="_blank" class="text-blue-600 text-[10px] underline">📍 地図を開く</a>` : ''}
+                            ${item.location ? `<a href="${mapUrl}" target="_blank" class="text-blue-600 text-[10px] underline">📍 地図</a>` : ''}
                             ${item.itemUrl ? `<a href="${item.itemUrl}" target="_blank" class="text-orange-600 text-[10px] underline">🔗 リンク</a>` : ''}
                         </div>
-                        ${item.hours ? `<details class="mt-2"><summary class="text-[10px] text-gray-400">詳細情報を表示</summary><div class="p-2 bg-gray-50 rounded text-[10px] whitespace-pre-wrap">${item.hours}</div></details>` : ''}
                         <div class="mt-3 bg-emerald-50/50 p-4 rounded-xl border-l-4 border-emerald-400 text-xs whitespace-pre-wrap text-gray-600">${item.memo || ''}</div>
                     `;
                     container.appendChild(div);
@@ -363,6 +362,7 @@
                 toggleCategoryFields(item.category);
                 document.getElementById('name').value = item.name || '';
                 document.getElementById('location').value = item.location || '';
+                document.getElementById('phone').value = item.phone || '';
                 document.getElementById('itemUrl').value = item.itemUrl || '';
                 document.getElementById('hours').value = item.hours || '';
                 document.getElementById('memo').value = item.memo || '';
@@ -384,7 +384,7 @@
         }
 
         function resetForm() { 
-            const ids = ['name','location','itemUrl','hours','memo','photo','sushi-fish','sushi-vinegar','hotel-interior','hotel-meal','hotel-amenity','barcode-val'];
+            const ids = ['name','location','phone','itemUrl','hours','memo','photo','sushi-fish','sushi-vinegar','hotel-interior','hotel-meal','hotel-amenity','barcode-val'];
             ids.forEach(id => { if(document.getElementById(id)) document.getElementById(id).value = ''; }); 
             document.getElementById('price-entry-list').innerHTML = ''; 
             document.getElementById('rating-val').value = 3; 
